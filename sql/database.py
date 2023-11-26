@@ -7,6 +7,7 @@ from sqlalchemy.orm import sessionmaker
 
 load_dotenv()
 
+
 # pylint: disable-next=line-too-long
 SQLALCHEMY_DATABASE_URL = f"mysql+mysqlconnector://{os.getenv('DATABASE_USERNAME')}:{os.getenv('DATABASE_PASSWORD')}@{os.getenv('DATABASE_HOST')}/{os.getenv('DATABASE')}"
 

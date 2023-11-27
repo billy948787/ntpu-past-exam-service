@@ -19,6 +19,7 @@ load-dotenv = "^0.1.0"
 mysql-connector-python = "^8.2.0"
 alembic = "^1.12.1"
 boto3 = "^1.29.6"
+urllib3 = ">=1.25.4,<1.27"
 
 
 [build-system]

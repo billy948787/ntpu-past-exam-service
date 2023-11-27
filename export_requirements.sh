@@ -1,3 +1,3 @@
-poetry export --without-hashes > requirements.txt
+poetry run pip freeze > requirements.txt
 git add requirements.txt
 echo "commit"

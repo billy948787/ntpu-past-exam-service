@@ -13,7 +13,7 @@ class ItemCreate(ItemBase):
 
 
 class Item(ItemBase):
-    id: int
+    id: str
     owner_id: int
 
     class Config:
@@ -29,7 +29,7 @@ class UserCreate(UserBase):
 
 
 class User(UserBase):
-    id: int
+    id: str
     is_active: bool
     items: list[Item] = []
 

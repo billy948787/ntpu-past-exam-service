@@ -15,11 +15,22 @@ s3 = boto3.resource(
     aws_secret_access_key=os.getenv("R2_ACCESS_TOKEN"),
 )
 
-r2 = s3.Bucket(os.getenv("R2_BUCKET_NAME"))
+r2 = boto3.client(
+    service_name="s3",
+    endpoint_url=os.getenv("R2_URL"),
+    aws_access_key_id=os.getenv("R2_ACCESS_KEY"),
+    aws_secret_access_key=os.getenv("R2_ACCESS_TOKEN"),
+    region_name="auto",
+)
 
 
 def list_all_files():
     file_list = []
-    for obj in r2.objects.all():
-        file_list.append(f"{os.getenv('R2_FILE_PATH')}/{obj.key}")
-    return file_list
+    meta = r2.list_objects_v2(Bucket=os.getenv("R2_BUCKET_NAME"))
+
+    try:
+        for obj in meta["Contents"]:
+            file_list.append(f"{os.getenv('R2_FILE_PATH')}/{obj['Key']}")
+        return {"count": meta["KeyCount"], "data": file_list}
+    except KeyError:
+        return {"count": 0, "data": file_list}

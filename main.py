@@ -16,3 +16,8 @@ app.include_router(users.router)
 @app.get("/")
 def get_all_content_in_r2():
     return r2.list_all_files()
+
+
+@app.get("/ping")
+def heartbeat():
+    return "pong"

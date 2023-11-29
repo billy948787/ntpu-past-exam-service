@@ -20,6 +20,9 @@ mysql-connector-python = "^8.2.0"
 alembic = "^1.12.1"
 boto3 = "^1.29.6"
 urllib3 = ">=1.25.4,<1.27"
+passlib = {extras = ["bcrypt"], version = "^1.7.4"}
+python-multipart = "^0.0.6"
+python-jose = "^3.3.0"
 
 
 [build-system]

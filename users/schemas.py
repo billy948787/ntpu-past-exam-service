@@ -4,15 +4,16 @@ from items.schemas import Item
 
 
 class UserBase(BaseModel):
-    email: str
+    username: str
 
 
 class UserCreate(UserBase):
-    password: str
+    hashed_password: str
 
 
 class User(UserBase):
     id: str
+    email: str | None
     is_active: bool
     items: list[Item] = []
 

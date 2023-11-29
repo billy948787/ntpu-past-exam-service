@@ -29,4 +29,4 @@ repos:
       - id: export
         name: export
         language: system
-        entry: sh export_requirements.sh
+        entry: sh ./export_requirements.sh

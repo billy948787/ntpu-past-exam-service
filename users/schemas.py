@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Optional
 
 from pydantic import BaseModel
 
@@ -15,7 +15,7 @@ class UserCreate(UserBase):
 
 class User(UserBase):
     id: str
-    email: Union[str, None]
+    email: Optional[str]
     is_active: bool
     items: list[Item] = []
 

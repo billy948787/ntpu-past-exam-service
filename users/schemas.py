@@ -1,3 +1,5 @@
+from typing import Union
+
 from pydantic import BaseModel
 
 from items.schemas import Item
@@ -13,7 +15,7 @@ class UserCreate(UserBase):
 
 class User(UserBase):
     id: str
-    email: str | None
+    email: Union[str, None]
     is_active: bool
     items: list[Item] = []
 

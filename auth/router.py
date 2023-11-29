@@ -1,6 +1,6 @@
 import os
 from datetime import datetime, timedelta
-from typing import Annotated
+from typing import Annotated, Optional
 
 from dotenv import load_dotenv
 from fastapi import APIRouter, Depends, HTTPException, Request, status
@@ -24,14 +24,14 @@ class Token(BaseModel):
 
 
 class TokenData(BaseModel):
-    username: str | None = None
+    username: Optional[str] = None
 
 
 SECRET_KEY = os.getenv("HASH_KEY")
 ALGORITHM = "HS256"
 
 
-def create_access_token(data: dict, expires_delta: int | None = 1):
+def create_access_token(data: dict, expires_delta: Optional[int] = 1):
     to_encode = data.copy()
     expire = datetime.utcnow() + timedelta(days=expires_delta)
 

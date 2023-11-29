@@ -1,17 +1,16 @@
-import os
-from datetime import datetime, timedelta
 from typing import Annotated, Optional
 
 from dotenv import load_dotenv
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
-from jose import JWTError, jwt
+from jose import JWTError
 from passlib.context import CryptContext
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from sql.database import get_db
 from users import dependencies as users_dependencies
+from utils.token import create_access_token, get_access_token_payload
 
 load_dotenv()
 
@@ -27,19 +26,6 @@ class TokenData(BaseModel):
     username: Optional[str] = None
 
 
-SECRET_KEY = os.getenv("HASH_KEY")
-ALGORITHM = "HS256"
-
-
-def create_access_token(data: dict, expires_delta: Optional[int] = 1):
-    to_encode = data.copy()
-    expire = datetime.utcnow() + timedelta(days=expires_delta)
-
-    to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    return encoded_jwt
-
-
 credentials_exception = HTTPException(
     status_code=status.HTTP_401_UNAUTHORIZED,
     detail="Invalid credentials",
@@ -48,10 +34,10 @@ credentials_exception = HTTPException(
 
 async def auth_middleware(request: Request):
     try:
-        token = request.headers.get("authorization") or " "
-        payload = jwt.decode(token.split(" ")[1], SECRET_KEY, algorithms=[ALGORITHM])
+        payload = get_access_token_payload(request)
         username: str = payload.get("sub")
-        if username is None:
+        token_type: str = payload.get("type")
+        if username is None or not token_type == "access":
             raise credentials_exception
     except JWTError:
         raise credentials_exception
@@ -79,7 +65,9 @@ def login(
     if not verify_password(form_data.password, user.hashed_password):
         raise HTTPException(status_code=400, detail="Incorrect username or password")
 
-    access_token = create_access_token(data={"sub": user.username})
+    access_token = create_access_token(
+        data={"sub": user.username, "type": "access", "id": user.id}
+    )
     refresh_token = create_access_token(
         data={"sub": user.username, "type": "refresh"}, expires_delta=365
     )
@@ -93,11 +81,13 @@ def login(
 
 @router.post("/refresh")
 def refresh(request: Request):
-    token = request.headers.get("authorization") or " "
     try:
-        payload = jwt.decode(token.split(" ")[1], SECRET_KEY, algorithms=[ALGORITHM])
+        payload = get_access_token_payload(request)
         username: str = payload.get("sub")
-        access_token = create_access_token(data={"sub": username})
+        user_id: str = payload.get("id")
+        access_token = create_access_token(
+            data={"sub": username, "type": "access", "id": user_id}
+        )
         refresh_token = create_access_token(
             data={"sub": username, "type": "refresh"}, expires_delta=365
         )
@@ -125,11 +115,11 @@ def register(
 
     hashed_password = get_password_hash(form_data.password)
 
-    users_dependencies.create_user(
+    user = users_dependencies.create_user(
         db, {"username": form_data.username, "hashed_password": hashed_password}
     )
 
-    access_token = create_access_token(data={"sub": user.username})
+    access_token = create_access_token(data={"sub": user.username, "id": user.id})
 
     refresh_token = create_access_token(
         data={"sub": user.username, "type": "refresh"}, expires_delta=365

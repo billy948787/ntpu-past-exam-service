@@ -7,8 +7,11 @@ from dotenv import load_dotenv
 from sqlalchemy import engine_from_config, pool
 
 from alembic import context
+from items.models import Item
+from posts.models import Post, PostFile
 from sql.database import SQLALCHEMY_DATABASE_URL
 from sql.models import Base
+from users.models import User
 
 load_dotenv()
 

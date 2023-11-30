@@ -15,7 +15,7 @@ def read_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     return users
 
 
-@router.get("/{user_id}", response_model=schemas.User)
+@router.get("/{user_id}")
 def read_user(user_id: str, db: Session = Depends(get_db)):
     db_user = dependencies.get_user(db, user_id=user_id)
     if db_user is None:
@@ -25,6 +25,8 @@ def read_user(user_id: str, db: Session = Depends(get_db)):
 
 @router.post("/{user_id}/items/", response_model=schemas.Item)
 def create_item_for_user(
-    user_id: int, item: items_schemas.ItemCreate, db: Session = Depends(get_db)
+    user_id: int,
+    item: items_schemas.ItemCreate,
+    db: Session = Depends(get_db),
 ):
     return dependencies.create_user_item(db=db, item=item, user_id=user_id)

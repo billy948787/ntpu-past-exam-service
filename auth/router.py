@@ -69,7 +69,8 @@ def login(
         data={"sub": user.username, "type": "access", "id": user.id}
     )
     refresh_token = create_access_token(
-        data={"sub": user.username, "type": "refresh"}, expires_delta=365
+        data={"sub": user.username, "type": "refresh"},
+        expires_delta=365,
     )
 
     return {
@@ -116,13 +117,18 @@ def register(
     hashed_password = get_password_hash(form_data.password)
 
     user = users_dependencies.create_user(
-        db, {"username": form_data.username, "hashed_password": hashed_password}
+        db,
+        {
+            "username": form_data.username,
+            "hashed_password": hashed_password,
+        },
     )
 
     access_token = create_access_token(data={"sub": user.username, "id": user.id})
 
     refresh_token = create_access_token(
-        data={"sub": user.username, "type": "refresh"}, expires_delta=365
+        data={"sub": user.username, "type": "refresh"},
+        expires_delta=365,
     )
 
     return {

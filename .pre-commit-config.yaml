@@ -12,6 +12,8 @@ repos:
         name: isort
         language: system
         entry: poetry run isort .
+        args: ["--profile=black"]
+        pass_filenames: false
   - repo: local
     hooks:
       - id: pylint

@@ -46,7 +46,10 @@ def downgrade() -> None:
     )
     op.create_index("ix_posts_files_title", "posts_files", ["title"], unique=False)
     op.create_index(
-        "ix_posts_files_description", "posts_files", ["description"], unique=False
+        "ix_posts_files_description",
+        "posts_files",
+        ["description"],
+        unique=False,
     )
     op.create_table(
         "posts",

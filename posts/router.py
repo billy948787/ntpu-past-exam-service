@@ -1,5 +1,3 @@
-import os
-import uuid
 from typing import Annotated
 
 from dotenv import load_dotenv
@@ -7,7 +5,6 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, Uplo
 from sqlalchemy.orm import Session
 
 from sql.database import get_db
-from static_file.r2 import r2
 from utils.token import get_access_token_payload
 
 from . import dependencies
@@ -47,14 +44,6 @@ async def create_post(
         "content": content,
         "course_id": course_id,
     }
-    post = dependencies.make_post(db, post, user_id)
+    post = dependencies.make_post(db, post, user_id, file)
 
-    key = f"{user_id}/{post.id}/{str(uuid.uuid4())}"
-    r2.put_object(Body=file, Bucket=os.getenv("R2_BUCKET_NAME"), Key=key)
-    file_path = f'{os.getenv("R2_FILE_PATH")}/{key}'
-    file = {"url": file_path, "post_id": post.id}
-    dependencies.make_post_file(db, file)
-
-    return {
-        "status": "success",
-    }
+    return {"status": "success", "post_id": post.id}

@@ -1,4 +1,5 @@
 from fastapi import Depends, FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer
 
 from auth.router import auth_middleware
@@ -16,6 +17,22 @@ models.Base.metadata.create_all(bind=engine)
 
 
 app = FastAPI()
+
+origins = [
+    "http://past-exam-api.ntpu.cc",
+    "http://past-exam-api.ntpu.xyz",
+    "http://localhost",
+    "http://localhost:3000",
+    "http://localhost:8080",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 app.include_router(

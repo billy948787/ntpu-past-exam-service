@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Form
+from fastapi import APIRouter, Depends, Form, HTTPException
 from sqlalchemy.orm import Session
 
 from sql.database import get_db
@@ -14,6 +14,14 @@ router = APIRouter(prefix="/courses")
 def read_courses(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     items = dependencies.get_courses(db, skip=skip, limit=limit)
     return items
+
+
+@router.get("/{course_id}")
+def get_single_post(course_id: str, db: Session = Depends(get_db)):
+    data = dependencies.get_course(db, course_id)
+    if data is None:
+        raise HTTPException(status_code=404)
+    return data
 
 
 @router.post("/")

@@ -1,6 +1,6 @@
 # pylint: skip-file
 
-from items.models import Item
+from courses.models import Course
 from posts.models import Post, PostFile
 from users.models import User
 

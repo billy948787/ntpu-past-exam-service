@@ -15,8 +15,10 @@ load_dotenv()
 
 
 @router.get("/")
-def read_all_post(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    return dependencies.get_posts(db, skip=skip, limit=limit)
+def read_all_post(
+    course_id: str = "", skip: int = 0, limit: int = 100, db: Session = Depends(get_db)
+):
+    return dependencies.get_posts(db, course_id, skip=skip, limit=limit)
 
 
 @router.get("/{post_id}")

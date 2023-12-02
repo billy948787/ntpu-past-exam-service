@@ -1,7 +1,5 @@
 from sqlalchemy.orm import Session
 
-import items.models as item_model
-import items.schemas as item_schemas
 from posts import models
 
 from . import models, schemas
@@ -32,11 +30,3 @@ def create_user(db: Session, user: schemas.UserCreate):
     db.commit()
     db.refresh(db_user)
     return db_user
-
-
-def create_user_item(db: Session, item: item_schemas.ItemCreate, user_id: int):
-    db_item = item_model.Item(**item.dict(), owner_id=user_id)
-    db.add(db_item)
-    db.commit()
-    db.refresh(db_item)
-    return db_item

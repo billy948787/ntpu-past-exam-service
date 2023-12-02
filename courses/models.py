@@ -9,10 +9,9 @@ def generate_uuid():
     return str(uuid.uuid4())
 
 
-class Item(Base):
-    __tablename__ = "items"
+class Course(Base):
+    __tablename__ = "courses"
 
     id = Column(String(256), primary_key=True, default=generate_uuid)
-    title = Column(String(256), index=True)
-    description = Column(String(256), index=True)
-    owner_id = Column(String(256))
+    name = Column(String(256), index=True)
+    category = Column(String(256), index=True)

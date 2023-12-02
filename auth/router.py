@@ -69,7 +69,7 @@ def login(
         data={"sub": user.username, "type": "access", "id": user.id}
     )
     refresh_token = create_access_token(
-        data={"sub": user.username, "type": "refresh"},
+        data={"sub": user.username, "type": "refresh", "id": user.id},
         expires_delta=365,
     )
 
@@ -90,7 +90,7 @@ def refresh(request: Request):
             data={"sub": username, "type": "access", "id": user_id}
         )
         refresh_token = create_access_token(
-            data={"sub": username, "type": "refresh"}, expires_delta=365
+            data={"sub": username, "type": "refresh", "id": user_id}, expires_delta=365
         )
 
         return {

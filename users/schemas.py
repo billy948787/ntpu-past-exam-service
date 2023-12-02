@@ -2,8 +2,6 @@ from typing import Optional
 
 from pydantic import BaseModel
 
-from items.schemas import Item
-
 
 class UserBase(BaseModel):
     username: str
@@ -17,7 +15,7 @@ class User(UserBase):
     id: str
     email: Optional[str]
     is_active: bool
-    items: list[Item] = []
+    is_admin: bool
 
     class Config:
         from_attributes = True

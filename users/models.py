@@ -16,4 +16,5 @@ class User(Base):
     email = Column(String(256))
     username = Column(String(256), unique=True, index=True)
     hashed_password = Column(String(256))
-    is_active = Column(Boolean, default=True)
+    is_active = Column(Boolean, default=False)
+    is_admin = Column(Boolean, default=False)

@@ -3,7 +3,7 @@ from fastapi.security import OAuth2PasswordBearer
 
 from auth.router import auth_middleware
 from auth.router import router as auth_router
-from items.router import router as items_router
+from courses.router import router as courses_router
 from posts.router import router as posts_router
 from sql import models
 from sql.database import engine
@@ -24,8 +24,8 @@ app.include_router(
     dependencies=[Depends(auth_middleware), Depends(oauth2_scheme)],
 )
 app.include_router(
-    items_router,
-    tags=["Items"],
+    courses_router,
+    tags=["Courses"],
     dependencies=[Depends(auth_middleware), Depends(oauth2_scheme)],
 )
 app.include_router(

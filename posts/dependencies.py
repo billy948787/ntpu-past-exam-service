@@ -12,16 +12,21 @@ from . import models
 load_dotenv()
 
 
-def get_posts(db: Session, skip: int = 0, limit: int = 100):
+def get_posts(db: Session, course_id: str, skip: int = 0, limit: int = 100):
+    query_filter = []
+
+    if course_id:
+        query_filter.append(models.Post.course_id == course_id)
+
     query_result = (
         db.query(models.Post, models.PostFile)
+        .filter(*query_filter)
         .join(models.PostFile, models.PostFile.post_id == models.Post.id)
         .offset(skip)
         .limit(limit)
         .all()
     )
     data = []
-    print(query_result)
     for post, file in query_result:
         data.append({**post.__dict__, "file": file.url})
     return data

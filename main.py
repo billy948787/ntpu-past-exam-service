@@ -19,8 +19,8 @@ models.Base.metadata.create_all(bind=engine)
 app = FastAPI()
 
 origins = [
-    "https://past-exam-api.ntpu.cc",
-    "https://past-exam-api.ntpu.xyz",
+    "https://past-exam.ntpu.cc",
+    "https://past-exam.ntpu.xyz",
     "http://localhost",
     "http://localhost:3000",
     "http://localhost:8080",

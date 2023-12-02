@@ -8,7 +8,7 @@ from . import dependencies, schemas
 router = APIRouter(prefix="/users")
 
 
-@router.get("/", response_model=list[schemas.User])
+@router.get("", response_model=list[schemas.User])
 def read_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     users = dependencies.get_users(db, skip=skip, limit=limit)
     return users

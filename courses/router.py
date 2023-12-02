@@ -10,7 +10,7 @@ from . import dependencies, schemas
 router = APIRouter(prefix="/courses")
 
 
-@router.get("/", response_model=list[schemas.Course])
+@router.get("", response_model=list[schemas.Course])
 def read_courses(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     items = dependencies.get_courses(db, skip=skip, limit=limit)
     return items
@@ -24,7 +24,7 @@ def get_single_post(course_id: str, db: Session = Depends(get_db)):
     return data
 
 
-@router.post("/")
+@router.post("")
 async def create_course(
     name: Annotated[str, Form()],
     category: Annotated[str, Form()],

@@ -14,7 +14,7 @@ router = APIRouter(prefix="/posts")
 load_dotenv()
 
 
-@router.get("/")
+@router.get("")
 def read_all_post(
     course_id: str = "", skip: int = 0, limit: int = 100, db: Session = Depends(get_db)
 ):
@@ -29,7 +29,7 @@ def get_single_post(post_id: str, db: Session = Depends(get_db)):
     return data
 
 
-@router.post("/")
+@router.post("")
 async def create_post(
     request: Request,
     title: Annotated[str, Form()],

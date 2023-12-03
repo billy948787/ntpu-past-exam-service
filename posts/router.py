@@ -33,10 +33,10 @@ def get_single_post(post_id: str, db: Session = Depends(get_db)):
 async def create_post(
     request: Request,
     title: Annotated[str, Form()],
-    content: Annotated[str, Form()],
     course_id: Annotated[str, Form()],
     file: Annotated[UploadFile, File()],
     db: Session = Depends(get_db),
+    content: Annotated[str, Form()] = "",
 ):
     payload = get_access_token_payload(request)
     user_id = payload.get("id")

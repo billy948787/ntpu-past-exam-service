@@ -23,6 +23,7 @@ urllib3 = ">=1.25.4,<1.27"
 passlib = {extras = ["bcrypt"], version = "^1.7.4"}
 python-multipart = "^0.0.6"
 python-jose = "^3.3.0"
+pydash = "^7.0.6"
 
 
 [build-system]

@@ -7,5 +7,10 @@
   ],
   "routes": [
     {"src": "/(.*)", "dest": "main.py"}
-  ]
+  ],
+  "functions": {
+    "/(.*)": {
+      "memory": 225
+    }
+  }
 }

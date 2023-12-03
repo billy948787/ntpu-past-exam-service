@@ -9,7 +9,7 @@
     {"src": "/(.*)", "dest": "main.py"}
   ],
   "functions": {
-    "/(.*)": {
+    "main.py": {
       "memory": 225
     }
   }

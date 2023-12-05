@@ -3,7 +3,7 @@ from typing import Annotated, Optional
 from dotenv import load_dotenv
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
-from jose import JWTError
+from jose import ExpiredSignatureError, JWTError
 from passlib.context import CryptContext
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -71,6 +71,7 @@ def login(
             "type": "access",
             "id": user.id,
             "is_admin": user.is_admin,
+            "is_active": user.is_active,
         }
     )
     refresh_token = create_access_token(
@@ -79,6 +80,7 @@ def login(
             "type": "refresh",
             "id": user.id,
             "is_admin": user.is_admin,
+            "is_active": user.is_active,
         },
         expires_delta=365,
     )
@@ -90,6 +92,33 @@ def login(
     }
 
 
+@router.get("/verify-token")
+def verify(request: Request):
+    try:
+        payload = get_access_token_payload(request)
+        is_admin = payload.get("is_admin")
+        is_active = payload.get("is_active")
+
+        permission_data = {
+            "is_admin": is_admin,
+            "is_active": is_active,
+        }
+
+        return permission_data
+    except ExpiredSignatureError:
+        payload = get_access_token_payload(request)
+        is_admin = payload.get("is_admin")
+        is_active = payload.get("is_active")
+
+        permission_data = {
+            "is_admin": is_admin,
+            "is_active": is_active,
+        }
+        return permission_data
+    except JWTError:
+        raise credentials_exception
+
+
 @router.post("/refresh")
 def refresh(request: Request):
     try:
@@ -97,12 +126,14 @@ def refresh(request: Request):
         username: str = payload.get("sub")
         user_id: str = payload.get("id")
         is_admin = payload.get("is_admin")
+        is_active = payload.get("is_active")
         access_token = create_access_token(
             data={
                 "sub": username,
                 "type": "access",
                 "id": user_id,
                 "is_admin": is_admin,
+                "is_active": is_active,
             }
         )
         refresh_token = create_access_token(
@@ -111,6 +142,7 @@ def refresh(request: Request):
                 "type": "refresh",
                 "id": user_id,
                 "is_admin": is_admin,
+                "is_active": is_active,
             },
             expires_delta=365,
         )

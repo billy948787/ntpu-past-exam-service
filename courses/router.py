@@ -19,14 +19,14 @@ def read_courses(skip: int = 0, limit: int = 100, db: Session = Depends(get_db))
 @router.get("/{course_id}")
 def get_single_post(course_id: str, db: Session = Depends(get_db)):
     data = dependencies.get_course(db, course_id)
-    if data is None:
+
+    if data["course"] is None:
         raise HTTPException(status_code=404)
 
-    print(data)
-
-    formatted_data = {"course": data["course"], "posts": []}
+    formatted_data = {"course": data["course"].__dict__, "posts": []}
     for post in data["posts"]:
         try:
+            post = post.__dict__
             if post["status"] == "APPROVED":
                 del post["status"]
                 formatted_data["posts"].append(post)

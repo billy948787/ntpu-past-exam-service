@@ -39,7 +39,16 @@ def get_users(db: Session, is_active: bool, skip: int = 0, limit: int = 100):
     query_filter = []
 
     if is_active is not None:
-        query_filter.append(models.User.is_active == is_active)
+        if is_active:
+            # pylint: disable-next=singleton-comparison
+            query_filter.append(models.User.is_active == True)
+        else:
+            query_filter.append(
+                # pylint: disable-next=singleton-comparison
+                (models.User.is_active == False)
+                # pylint: disable-next=singleton-comparison
+                | (models.User.is_active == None)
+            )
 
     return db.query(models.User).filter(*query_filter).offset(skip).limit(limit).all()
 

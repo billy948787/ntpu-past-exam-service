@@ -13,7 +13,10 @@ router = APIRouter(prefix="/users")
 
 @router.get("")
 def read_users(
-    is_active: bool, skip: int = 0, limit: int = 100, db: Session = Depends(get_db)
+    is_active: bool = None,
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db),
 ):
     users = dependencies.get_users(db, skip=skip, limit=limit, is_active=is_active)
     data = []

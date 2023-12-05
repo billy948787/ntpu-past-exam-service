@@ -1,7 +1,5 @@
 from typing import Dict
 
-from sqlalchemy import func
-from sqlalchemy.dialects.mysql import JSON
 from sqlalchemy.orm import Session
 
 from posts.models import Post
@@ -14,31 +12,14 @@ def get_courses(db: Session, skip: int = 0, limit: int = 100):
 
 
 def get_course(db: Session, course_id: str):
-    sq = (
-        db.query(
-            func.json_object(
-                "name",
-                models.Course.name,
-                "id",
-                models.Course.id,
-                "category",
-                models.Course.category,
-            ).label("course"),
-            func.json_arrayagg(
-                func.json_object(
-                    "title", Post.title, "id", Post.id, "status", Post.status
-                )
-            ).label("posts"),
-        )
-        .filter(models.Course.id == course_id)
-        .filter(Post.course_id == course_id)
-        .group_by(models.Course.id)
-        .subquery()
-    )
+    course_data = db.query(models.Course).filter(models.Course.id == course_id).first()
 
-    result = db.query(
-        func.json_object("course", sq.c.course, "posts", sq.c.posts, type_=JSON)
-    ).scalar()
+    posts = db.query(Post).filter(Post.course_id == course_id).all()
+
+    result = {"course": course_data, "posts": []}
+
+    for post in posts:
+        result["posts"].append(post)
 
     return result
 

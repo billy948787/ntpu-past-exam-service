@@ -5,5 +5,6 @@ disable=
     C0115, # Missing class docstring (missing-class-docstring)
     R0903, # Too few public methods (0/2) (too-few-public-methods)
     W0707, # (raise-missing-from)
+    C0301, # (line-too-long)
     R0913, # (too-many-arguments)
 ignore-paths=^alembic/versions/.*$

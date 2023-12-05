@@ -9,6 +9,7 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     hashed_password: str
+    readable_name: str
 
 
 class User(UserBase):

@@ -12,6 +12,8 @@ from sql.database import get_db
 from users import dependencies as users_dependencies
 from utils.token import create_access_token, get_access_token_payload
 
+from . import dependencies
+
 load_dotenv()
 
 router = APIRouter()
@@ -61,8 +63,19 @@ def login(
 ):
     user = users_dependencies.get_user_by_username(db, form_data.username)
     if not user:
-        raise HTTPException(status_code=400, detail="Incorrect username or password")
-    if not verify_password(form_data.password, user.hashed_password):
+        hashed_password = get_password_hash(form_data.password)
+        readable_name = dependencies.get_lms_readable_name(
+            username=form_data.username, password=form_data.password
+        )
+        user = users_dependencies.create_user(
+            db,
+            {
+                "username": form_data.username,
+                "hashed_password": hashed_password,
+                "readable_name": readable_name,
+            },
+        )
+    elif not verify_password(form_data.password, user.hashed_password):
         raise HTTPException(status_code=400, detail="Incorrect username or password")
 
     access_token = create_access_token(
@@ -156,8 +169,8 @@ def refresh(request: Request):
         raise credentials_exception
 
 
-@router.post("/register")
-def register(
+@router.post("/create_user")
+def create_user(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     db: Session = Depends(get_db),
 ):

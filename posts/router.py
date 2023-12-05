@@ -16,9 +16,16 @@ load_dotenv()
 
 @router.get("")
 def read_all_post(
-    course_id: str = "", skip: int = 0, limit: int = 100, db: Session = Depends(get_db)
+    status: str = "",
+    user_id: str = "",
+    course_id: str = "",
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db),
 ):
-    return dependencies.get_posts(db, course_id, skip=skip, limit=limit)
+    return dependencies.get_posts(
+        db, status=status, user_id=user_id, course_id=course_id, skip=skip, limit=limit
+    )
 
 
 @router.get("/{post_id}")
@@ -49,3 +56,11 @@ async def create_post(
     post = dependencies.make_post(db, post, user_id, file)
 
     return {"status": "success", "post_id": post.id}
+
+
+@router.put("/status/{post_id}")
+def update_post_status(
+    status: Annotated[str, Form()], post_id: str, db: Session = Depends(get_db)
+):
+    dependencies.update_post_status(db, post_id=post_id, status=status)
+    return {"status": "success"}

@@ -66,10 +66,20 @@ def login(
         raise HTTPException(status_code=400, detail="Incorrect username or password")
 
     access_token = create_access_token(
-        data={"sub": user.username, "type": "access", "id": user.id}
+        data={
+            "sub": user.username,
+            "type": "access",
+            "id": user.id,
+            "is_admin": user.is_admin,
+        }
     )
     refresh_token = create_access_token(
-        data={"sub": user.username, "type": "refresh", "id": user.id},
+        data={
+            "sub": user.username,
+            "type": "refresh",
+            "id": user.id,
+            "is_admin": user.is_admin,
+        },
         expires_delta=365,
     )
 
@@ -86,11 +96,23 @@ def refresh(request: Request):
         payload = get_access_token_payload(request)
         username: str = payload.get("sub")
         user_id: str = payload.get("id")
+        is_admin = payload.get("is_admin")
         access_token = create_access_token(
-            data={"sub": username, "type": "access", "id": user_id}
+            data={
+                "sub": username,
+                "type": "access",
+                "id": user_id,
+                "is_admin": is_admin,
+            }
         )
         refresh_token = create_access_token(
-            data={"sub": username, "type": "refresh", "id": user_id}, expires_delta=365
+            data={
+                "sub": username,
+                "type": "refresh",
+                "id": user_id,
+                "is_admin": is_admin,
+            },
+            expires_delta=365,
         )
 
         return {

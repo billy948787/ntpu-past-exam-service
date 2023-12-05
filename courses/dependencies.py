@@ -25,7 +25,9 @@ def get_course(db: Session, course_id: str):
                 models.Course.category,
             ).label("course"),
             func.json_arrayagg(
-                func.json_object("title", Post.title, "id", Post.id)
+                func.json_object(
+                    "title", Post.title, "id", Post.id, "status", Post.status
+                )
             ).label("posts"),
         )
         .filter(models.Course.id == course_id)

@@ -21,7 +21,18 @@ def get_single_post(course_id: str, db: Session = Depends(get_db)):
     data = dependencies.get_course(db, course_id)
     if data is None:
         raise HTTPException(status_code=404)
-    return data
+
+    print(data)
+
+    formatted_data = {"course": data["course"], "posts": []}
+    for post in data["posts"]:
+        try:
+            if post["status"] == "APPROVED":
+                del post["status"]
+                formatted_data["posts"].append(post)
+        except KeyError:
+            pass
+    return formatted_data
 
 
 @router.post("")

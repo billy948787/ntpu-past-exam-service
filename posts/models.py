@@ -17,6 +17,7 @@ class Post(Base):
     content = Column(Text)
     owner_id = Column(String(256))
     course_id = Column(String(256))
+    status = Column(String(256), index=True, default="PENDING")
 
 
 class PostFile(Base):

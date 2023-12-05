@@ -188,6 +188,7 @@ def create_user(
         {
             "username": form_data.username,
             "hashed_password": hashed_password,
+            "readable_name": form_data.username,
         },
     )
 

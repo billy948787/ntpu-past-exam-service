@@ -41,13 +41,14 @@ async def create_post(
     request: Request,
     title: Annotated[str, Form()],
     course_id: Annotated[str, Form()],
-    file: Annotated[UploadFile, File()],
+    file: Annotated[UploadFile, File()] = None,
     db: Session = Depends(get_db),
     content: Annotated[str, Form()] = "",
 ):
     payload = get_access_token_payload(request)
     user_id = payload.get("id")
-    file = await file.read()
+    if file:
+        file = await file.read()
     post = {
         "title": title,
         "content": content,

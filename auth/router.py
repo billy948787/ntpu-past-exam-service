@@ -106,40 +106,38 @@ def login(
 
 
 @router.get("/verify-token")
-def verify(request: Request):
+# pylint: disable=inconsistent-return-statements
+def verify(request: Request, db: Session = Depends(get_db)):
     try:
-        payload = get_access_token_payload(request)
-        is_admin = payload.get("is_admin")
-        is_active = payload.get("is_active")
-
-        permission_data = {
-            "is_admin": is_admin,
-            "is_active": is_active,
-        }
-
-        return permission_data
+        get_access_token_payload(request)
     except ExpiredSignatureError:
-        payload = get_access_token_payload(request)
-        is_admin = payload.get("is_admin")
-        is_active = payload.get("is_active")
-
-        permission_data = {
-            "is_admin": is_admin,
-            "is_active": is_active,
-        }
-        return permission_data
+        pass
     except JWTError:
         raise credentials_exception
+    finally:
+        payload = get_access_token_payload(request)
+        user_id = payload.get("id")
+        user = users_dependencies.get_user(db, user_id)
+        is_admin = user.is_admin
+        is_active = user.is_active
+
+        permission_data = {
+            "is_admin": is_admin,
+            "is_active": is_active,
+        }
+        # pylint: disable=lost-exception, return-in-finally
+        return permission_data
 
 
 @router.post("/refresh")
-def refresh(request: Request):
+def refresh(request: Request, db: Session = Depends(get_db)):
     try:
         payload = get_access_token_payload(request)
         username: str = payload.get("sub")
         user_id: str = payload.get("id")
-        is_admin = payload.get("is_admin")
-        is_active = payload.get("is_active")
+        user = users_dependencies.get_user(db, user_id)
+        is_admin = user.is_admin
+        is_active = user.is_active
         access_token = create_access_token(
             data={
                 "sub": username,

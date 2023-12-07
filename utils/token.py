@@ -13,9 +13,11 @@ SECRET_KEY = os.getenv("HASH_KEY")
 ALGORITHM = "HS256"
 
 
-def get_access_token_payload(request: Request):
+def get_access_token_payload(request: Request, options=None):
     token = request.headers.get("authorization") or " "
-    payload = jwt.decode(token.split(" ")[1], SECRET_KEY, algorithms=[ALGORITHM])
+    payload = jwt.decode(
+        token.split(" ")[1], SECRET_KEY, algorithms=[ALGORITHM], options=options
+    )
     return payload
 
 

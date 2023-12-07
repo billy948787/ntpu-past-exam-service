@@ -41,6 +41,11 @@ async def auth_middleware(request: Request):
         token_type: str = payload.get("type")
         if username is None or not token_type == "access":
             raise credentials_exception
+    except ExpiredSignatureError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Credentials Expired",
+        )
     except JWTError:
         raise credentials_exception
 
@@ -106,16 +111,9 @@ def login(
 
 
 @router.get("/verify-token")
-# pylint: disable=inconsistent-return-statements
 def verify(request: Request, db: Session = Depends(get_db)):
     try:
-        get_access_token_payload(request)
-    except ExpiredSignatureError:
-        pass
-    except JWTError:
-        raise credentials_exception
-    finally:
-        payload = get_access_token_payload(request)
+        payload = get_access_token_payload(request, options={"verify_exp": False})
         user_id = payload.get("id")
         user = users_dependencies.get_user(db, user_id)
         is_admin = user.is_admin
@@ -125,8 +123,9 @@ def verify(request: Request, db: Session = Depends(get_db)):
             "is_admin": is_admin,
             "is_active": is_active,
         }
-        # pylint: disable=lost-exception, return-in-finally
         return permission_data
+    except JWTError:
+        raise credentials_exception
 
 
 @router.post("/refresh")
@@ -145,7 +144,7 @@ def refresh(request: Request, db: Session = Depends(get_db)):
                 "id": user_id,
                 "is_admin": is_admin,
                 "is_active": is_active,
-            }
+            },
         )
         refresh_token = create_access_token(
             data={

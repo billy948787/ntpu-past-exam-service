@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import Column, String, Text
+from sqlalchemy import Boolean, Column, String, Text
 
 from sql.database import Base
 
@@ -17,6 +17,7 @@ class Post(Base):
     content = Column(Text)
     owner_id = Column(String(256))
     course_id = Column(String(256))
+    is_migrate = Column(Boolean, default=False)
     status = Column(String(256), index=True, default="PENDING")
 
 

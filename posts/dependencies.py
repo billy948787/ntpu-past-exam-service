@@ -1,6 +1,6 @@
 import os
 import uuid
-from typing import Dict
+from typing import Dict, List
 
 from dotenv import load_dotenv
 from sqlalchemy.orm import Session
@@ -40,47 +40,50 @@ def get_posts(
         query_filter.append(models.Post.owner_id == user_id)
 
     query_result = (
-        db.query(models.Post, models.PostFile, Course)
+        db.query(models.Post, Course)
         .filter(*query_filter)
-        .join(models.PostFile, models.PostFile.post_id == models.Post.id, isouter=True)
         .join(Course, models.Post.course_id == Course.id)
         .offset(skip)
         .limit(limit)
         .all()
     )
-    data = []
-    for post, file, course in query_result:
-        data.append(
-            {
-                **post.__dict__,
-                "file": file.url if file else "",
-                "course_name": course.name,
-            }
-        )
-    return data
+    posts = []
+    for post, course in query_result:
+        data = {
+            **post.__dict__,
+            "course_name": course.name,
+        }
+        posts.append(data)
+    return posts
 
 
 def get_post(db: Session, post_id: str):
     query_result = (
-        db.query(models.Post, models.PostFile, User)
+        db.query(models.Post, User)
         .filter(models.Post.id == post_id)
-        .join(models.PostFile, models.PostFile.post_id == models.Post.id, isouter=True)
         .join(User, models.Post.owner_id == User.id)
         .first()
     )
     if query_result is None:
         return None
-    (post, file, user) = query_result
+
+    query_file_result = (
+        db.query(models.PostFile).filter(models.PostFile.post_id == post_id).all()
+    )
+    (post, user) = query_result
     data = {
         **post.__dict__,
-        "file": file.url if file else "",
+        "files": [],
         "owner_name": user.readable_name if user.readable_name else user.username,
     }
+
+    for file in query_file_result:
+        data["files"].append(file.__dict__["url"])
 
     return data
 
 
-def make_post(db: Session, post: Dict, user_id: str, file: bytes):
+def make_post(db: Session, post: Dict, user_id: str, file_array: List[bytes]):
     db_post = models.Post(
         **post,
         owner_id=user_id,
@@ -89,13 +92,14 @@ def make_post(db: Session, post: Dict, user_id: str, file: bytes):
 
     db.flush()
 
-    if file:
-        key = f"{user_id}/{db_post.id}/{str(uuid.uuid4())}"
-        r2.put_object(Body=file, Bucket=os.getenv("R2_BUCKET_NAME"), Key=key)
-        file_path = f'{os.getenv("R2_FILE_PATH")}/{key}'
-        file = {"url": file_path, "post_id": db_post.id}
-        db_file = models.PostFile(**file)
-        db.add(db_file)
+    if len(file_array) > 0:
+        for file in file_array:
+            key = f"{user_id}/{db_post.id}/{str(uuid.uuid4())}"
+            r2.put_object(Body=file, Bucket=os.getenv("R2_BUCKET_NAME"), Key=key)
+            file_path = f'{os.getenv("R2_FILE_PATH")}/{key}'
+            file = {"url": file_path, "post_id": db_post.id}
+            db_file = models.PostFile(**file)
+            db.add(db_file)
 
     db.commit()
     db.refresh(db_post)

@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, List
 
 from dotenv import load_dotenv
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
@@ -41,20 +41,24 @@ async def create_post(
     request: Request,
     title: Annotated[str, Form()],
     course_id: Annotated[str, Form()],
-    file: Annotated[UploadFile, File()] = None,
+    files: List[Annotated[UploadFile, File()]] = None,
     db: Session = Depends(get_db),
     content: Annotated[str, Form()] = "",
+    is_migrate: Annotated[bool, Form()] = False,
 ):
     payload = get_access_token_payload(request)
     user_id = payload.get("id")
-    if file:
-        file = await file.read()
+    file_array = []
+    if files and len(files) > 0:
+        for file in files:
+            file_array.append(await file.read())
     post = {
         "title": title,
         "content": content,
         "course_id": course_id,
+        "is_migrate": is_migrate,
     }
-    post = dependencies.make_post(db, post, user_id, file)
+    post = dependencies.make_post(db, post, user_id, file_array)
 
     return {"status": "success", "post_id": post.id}
 

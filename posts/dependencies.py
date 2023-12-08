@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from courses.models import Course
 from static_file.r2 import r2
+from users.models import User
 
 from . import models
 
@@ -61,15 +62,20 @@ def get_posts(
 
 def get_post(db: Session, post_id: str):
     query_result = (
-        db.query(models.Post, models.PostFile)
+        db.query(models.Post, models.PostFile, User)
         .filter(models.Post.id == post_id)
         .join(models.PostFile, models.PostFile.post_id == models.Post.id, isouter=True)
+        .join(User, models.Post.owner_id == User.id)
         .first()
     )
     if query_result is None:
         return None
-    (post, file) = query_result
-    data = {**post.__dict__, "file": file.url if file else ""}
+    (post, file, user) = query_result
+    data = {
+        **post.__dict__,
+        "file": file.url if file else "",
+        "owner_name": user.readable_name if user.readable_name else user.username,
+    }
 
     return data
 

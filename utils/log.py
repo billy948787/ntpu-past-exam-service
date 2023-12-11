@@ -10,7 +10,7 @@ from logtail import LogtailHandler
 load_dotenv()
 
 LOG_TAIL_SOURCE_KEY = os.getenv("LOG_TAIL_SOURCE_KEY")
-SERVICE_NAME = os.getenv("R2_BUCKET_NAME")
+SERVICE_NAME = os.getenv("SERVICE_NAME") or "local"
 
 handler = LogtailHandler(source_token=LOG_TAIL_SOURCE_KEY)
 logger = logging.getLogger(__name__)

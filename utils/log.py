@@ -10,6 +10,7 @@ from logtail import LogtailHandler
 load_dotenv()
 
 LOG_TAIL_SOURCE_KEY = os.getenv("LOG_TAIL_SOURCE_KEY")
+SERVICE_NAME = os.getenv("DATABASE")
 
 handler = LogtailHandler(source_token=LOG_TAIL_SOURCE_KEY)
 logger = logging.getLogger(__name__)
@@ -33,6 +34,9 @@ async def log_request_middleware(request, call_next):
     except ValueError:
         status_phrase = ""
     logger.info(
-        f'"{request.method} {url}" {response.status_code} {status_phrase} {formatted_process_time}ms'
+        f'"{request.method} {url}" {response.status_code} {status_phrase} {formatted_process_time}ms',
+        extra={
+            "env": SERVICE_NAME,
+        },
     )
     return response

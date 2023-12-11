@@ -1,7 +1,9 @@
 # pylint: skip-file
+import os
 import sys
 from typing import Union
 
+from dotenv import load_dotenv
 from fastapi import Request
 from fastapi.exception_handlers import http_exception_handler as _http_exception_handler
 from fastapi.exception_handlers import (
@@ -9,7 +11,10 @@ from fastapi.exception_handlers import (
 )
 from fastapi.exceptions import HTTPException, RequestValidationError
 from fastapi.responses import JSONResponse, PlainTextResponse, Response
+from logtail import LogtailHandler
 
+load_dotenv()
+SERVICE_NAME = os.getenv("DATABASE")
 from utils.log import logger
 
 
@@ -28,7 +33,12 @@ async def request_validation_exception_handler(
         "body": body.decode(),
         "query_params": query_params,
     }
-    logger.info(detail)
+    logger.info(
+        detail,
+        extra={
+            "env": SERVICE_NAME,
+        },
+    )
     return await _request_validation_exception_handler(request, exc)
 
 
@@ -52,5 +62,8 @@ async def unhandled_exception_handler(
 
     logger.exception(
         exc,
+        extra={
+            "env": SERVICE_NAME,
+        },
     )
     return PlainTextResponse(str("Internal Server Error"), status_code=500)

@@ -1,6 +1,9 @@
 from fastapi import Depends, FastAPI
+from fastapi.exception_handlers import http_exception_handler
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer
+from starlette.exceptions import HTTPException
 
 from auth.router import auth_middleware
 from auth.router import router as auth_router
@@ -9,6 +12,11 @@ from posts.router import router as posts_router
 from sql import models
 from sql.database import engine
 from users.router import router as users_router
+from utils.exception_handlers import (
+    request_validation_exception_handler,
+    unhandled_exception_handler,
+)
+from utils.log import log_request_middleware
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
@@ -17,6 +25,12 @@ models.Base.metadata.create_all(bind=engine)
 
 
 app = FastAPI()
+
+
+app.middleware("http")(log_request_middleware)
+app.add_exception_handler(RequestValidationError, request_validation_exception_handler)
+app.add_exception_handler(HTTPException, http_exception_handler)
+app.add_exception_handler(Exception, unhandled_exception_handler)
 
 origins = [
     "https://past-exam.ntpu.cc",
@@ -51,11 +65,6 @@ app.include_router(
     dependencies=[Depends(auth_middleware), Depends(oauth2_scheme)],
 )
 app.include_router(auth_router, tags=["Auth"])
-
-
-# @app.get("/")
-# def get_all_content_in_r2():
-#     return r2.list_all_files()
 
 
 @app.get("/ping", tags=["Health Check"])

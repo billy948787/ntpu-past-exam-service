@@ -937,6 +937,21 @@ files = [
 python-dotenv = "*"
 
 [[package]]
+name = "logtail-python"
+version = "0.2.7"
+description = "Logtail.com client library"
+optional = false
+python-versions = "*"
+files = [
+    {file = "logtail-python-0.2.7.tar.gz", hash = "sha256:9b8e30cbb962c6fc70015bf1ca47cc35f1810a13dcef00327fe215e6d0c4ef23"},
+    {file = "logtail_python-0.2.7-py2.py3-none-any.whl", hash = "sha256:584b66c1f26a18561db4a7ed6670090c3256981697b9bc38394510aa56a3081f"},
+]
+
+[package.dependencies]
+msgpack = ">=0.5.6"
+requests = ">=2.18.4"
+
+[[package]]
 name = "mako"
 version = "1.3.0"
 description = "A super-fast templating language that borrows the best ideas from the existing templating languages."
@@ -2264,4 +2279,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "4499ae26babe9d0c7ae7650c361ca46c29d6e2c8753b57bb897988341ddf2e29"
+content-hash = "9e8b791d79982279daf746e2c3ba0c9396eadce64c869567d46cc1f5e6c36d5f"

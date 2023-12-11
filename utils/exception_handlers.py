@@ -14,7 +14,7 @@ from fastapi.responses import JSONResponse, PlainTextResponse, Response
 from logtail import LogtailHandler
 
 load_dotenv()
-SERVICE_NAME = os.getenv("DATABASE")
+SERVICE_NAME = os.getenv("R2_BUCKET_NAME")
 from utils.log import logger
 
 

@@ -50,6 +50,13 @@ async def auth_middleware(request: Request):
         raise credentials_exception
 
 
+async def admin_middleware(request: Request):
+    payload = get_access_token_payload(request)
+    is_admin: str = payload.get("is_admin")
+    if not is_admin:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+
+
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 

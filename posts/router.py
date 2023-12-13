@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from sqlalchemy.orm import Session
 
+from auth.router import admin_middleware
 from sql.database import get_db
 from utils.token import get_access_token_payload
 
@@ -63,7 +64,7 @@ async def create_post(
     return {"status": "success", "post_id": post.id}
 
 
-@router.put("/status/{post_id}")
+@router.put("/status/{post_id}", dependencies=[Depends(admin_middleware)])
 def update_post_status(
     status: Annotated[str, Form()], post_id: str, db: Session = Depends(get_db)
 ):

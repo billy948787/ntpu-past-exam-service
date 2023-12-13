@@ -3,6 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from sqlalchemy.orm import Session
 
+from auth.router import admin_middleware
 from sql.database import get_db
 from utils.token import get_access_token_payload
 
@@ -44,7 +45,7 @@ def read_user(request: Request, user_id: str, db: Session = Depends(get_db)):
     return data
 
 
-@router.put("/status/{user_id}")
+@router.put("/status/{user_id}", dependencies=[Depends(admin_middleware)])
 def update_user_active_status(
     is_active: Annotated[bool, Form()], user_id: str, db: Session = Depends(get_db)
 ):
@@ -52,7 +53,7 @@ def update_user_active_status(
     return {"status": "success"}
 
 
-@router.put("/admin/{user_id}")
+@router.put("/admin/{user_id}", dependencies=[Depends(admin_middleware)])
 def update_user_admin_status(
     is_admin: Annotated[bool, Form()], user_id: str, db: Session = Depends(get_db)
 ):

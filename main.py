@@ -7,6 +7,7 @@ from starlette.exceptions import HTTPException
 
 from auth.router import auth_middleware
 from auth.router import router as auth_router
+from bulletins.router import router as bulletins_router
 from courses.router import router as courses_router
 from posts.router import router as posts_router
 from sql import models
@@ -62,6 +63,12 @@ app.include_router(
 app.include_router(
     posts_router,
     tags=["Posts"],
+    dependencies=[Depends(auth_middleware), Depends(oauth2_scheme)],
+)
+
+app.include_router(
+    bulletins_router,
+    tags=["Bulletins"],
     dependencies=[Depends(auth_middleware), Depends(oauth2_scheme)],
 )
 app.include_router(auth_router, tags=["Auth"])

@@ -15,8 +15,6 @@ class UserCreate(UserBase):
 class User(UserBase):
     id: str
     email: Optional[str]
-    is_active: bool
-    is_admin: bool
 
     class Config:
         from_attributes = True

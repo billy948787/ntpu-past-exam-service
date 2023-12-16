@@ -53,9 +53,10 @@ async def auth_middleware(request: Request):
 
 async def admin_middleware(request: Request):
     payload = get_access_token_payload(request)
-    is_admin: str = payload.get("is_admin")
-    if not is_admin:
+    if payload is None:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+    # if not is_admin:
+    # raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -96,8 +97,6 @@ def login(
             "sub": user.username,
             "type": "access",
             "id": user.id,
-            "is_admin": user.is_admin,
-            "is_active": user.is_active,
         }
     )
     refresh_token = create_access_token(
@@ -105,8 +104,6 @@ def login(
             "sub": user.username,
             "type": "refresh",
             "id": user.id,
-            "is_admin": user.is_admin,
-            "is_active": user.is_active,
         },
         expires_delta=365,
     )

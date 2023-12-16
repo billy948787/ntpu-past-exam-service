@@ -13,10 +13,10 @@ class Post(Base):
     __tablename__ = "posts"
 
     id = Column(String(256), primary_key=True, default=generate_uuid)
-    title = Column(String(256), index=True)
+    title = Column(String(256))
     content = Column(Text)
-    owner_id = Column(String(256))
-    course_id = Column(String(256))
+    owner_id = Column(String(256), index=True)
+    course_id = Column(String(256), index=True)
     is_migrate = Column(Boolean, default=False)
     status = Column(String(256), index=True, default="PENDING")
     department_id = Column(String(256), index=True)

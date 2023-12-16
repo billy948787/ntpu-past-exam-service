@@ -23,7 +23,7 @@ class UserDepartment(Base):
     __tablename__ = "users_departments"
 
     id = Column(String(256), primary_key=True, default=generate_uuid)
-    user_id = Column(String(256))
-    department_id = Column(String(256))
-    status = Column(String(256), default="PENDING")
-    is_department_admin = Column(Boolean, default=False)
+    user_id = Column(String(256), index=True)
+    department_id = Column(String(256), index=True)
+    status = Column(String(256), default="PENDING", index=True)
+    is_department_admin = Column(Boolean, default=False, index=True)

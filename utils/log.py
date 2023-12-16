@@ -39,4 +39,5 @@ async def log_request_middleware(request, call_next):
             "env": SERVICE_NAME,
         },
     )
+    response.headers["Cache-Control"] = "max-age=10"
     return response

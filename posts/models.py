@@ -19,6 +19,7 @@ class Post(Base):
     course_id = Column(String(256))
     is_migrate = Column(Boolean, default=False)
     status = Column(String(256), index=True, default="PENDING")
+    department_id = Column(String(256), index=True)
 
 
 class PostFile(Base):

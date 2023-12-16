@@ -9,6 +9,7 @@ from auth.router import auth_middleware
 from auth.router import router as auth_router
 from bulletins.router import router as bulletins_router
 from courses.router import router as courses_router
+from departments.router import router as departments_router
 from posts.router import router as posts_router
 from sql import models
 from sql.database import engine
@@ -50,6 +51,11 @@ app.add_middleware(
 )
 
 
+app.include_router(
+    departments_router,
+    tags=["Departments"],
+    dependencies=[Depends(auth_middleware), Depends(oauth2_scheme)],
+)
 app.include_router(
     users_router,
     tags=["Users"],

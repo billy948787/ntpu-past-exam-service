@@ -18,6 +18,7 @@ def get_posts(
     db: Session,
     status: str,
     user_id: str,
+    department_id: str,
     course_id: str,
     skip: int = 0,
     limit: int = 100,
@@ -38,6 +39,9 @@ def get_posts(
 
     if user_id:
         query_filter.append(models.Post.owner_id == user_id)
+
+    if department_id:
+        query_filter.append(models.Post.department_id == department_id)
 
     query_result = (
         db.query(models.Post, Course)

@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 
+from departments.models import Department
 from posts import models
 
 from . import models, schemas
@@ -21,6 +22,24 @@ def update_user_admin(db: Session, user_id: str, is_admin: bool):
         .update({"is_admin": is_admin})
     )
     db.commit()
+
+
+def get_user_department_admin(db: Session, user_id: str):
+    items = (
+        db.query(models.UserDepartment, Department)
+        .filter(
+            (models.UserDepartment.user_id == user_id)
+            & (models.UserDepartment.is_department_admin)
+        )
+        .join(Department, Department.id == models.UserDepartment.department_id)
+        .all()
+    )
+
+    results = []
+
+    for ud, d in items:
+        results.append({**ud.__dict__, **d.__dict__})
+    return results
 
 
 def get_user(db: Session, user_id: str):

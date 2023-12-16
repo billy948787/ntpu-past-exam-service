@@ -20,12 +20,19 @@ def read_all_post(
     status: str = "",
     user_id: str = "",
     course_id: str = "",
+    department_id: str = "",
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
 ):
     return dependencies.get_posts(
-        db, status=status, user_id=user_id, course_id=course_id, skip=skip, limit=limit
+        db,
+        status=status,
+        user_id=user_id,
+        course_id=course_id,
+        department_id=department_id,
+        skip=skip,
+        limit=limit,
     )
 
 
@@ -42,6 +49,7 @@ async def create_post(
     request: Request,
     title: Annotated[str, Form()],
     course_id: Annotated[str, Form()],
+    department_id: Annotated[str, Form()] = "",
     files: List[Annotated[UploadFile, File()]] = None,
     db: Session = Depends(get_db),
     content: Annotated[str, Form()] = "",
@@ -58,6 +66,7 @@ async def create_post(
         "content": content,
         "course_id": course_id,
         "is_migrate": is_migrate,
+        "department_id": department_id,
     }
     post = dependencies.make_post(db, post, user_id, file_array)
 

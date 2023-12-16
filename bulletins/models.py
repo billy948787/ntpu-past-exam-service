@@ -15,3 +15,4 @@ class Bulletin(Base):
     id = Column(String(256), primary_key=True, default=generate_uuid)
     title = Column(String(256))
     content = Column(Text)
+    department_id = Column(String(256), index=True)

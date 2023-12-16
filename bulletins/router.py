@@ -12,7 +12,7 @@ router = APIRouter(prefix="/bulletins")
 
 
 @router.get("")
-def read_courses(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+def get_all_bulletins(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     items = dependencies.get_bulletins(db, skip=skip, limit=limit)
     return items
 
@@ -31,9 +31,10 @@ def get_single_post(bulletin_id: str, db: Session = Depends(get_db)):
 async def create_bulletin(
     title: Annotated[str, Form()],
     content: Annotated[str, Form()],
+    department_id: Annotated[str, Form()],
     db: Session = Depends(get_db),
 ):
-    bulletin = {"title": title, "content": content}
+    bulletin = {"title": title, "content": content, "department_id": department_id}
     bulletin = dependencies.make_db_bulletin(db, bulletin)
 
     return {"status": "success", "bulletin_id": bulletin.id}

@@ -8,6 +8,7 @@ from passlib.context import CryptContext
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
+from departments import dependencies as departments_dependencies
 from sql.database import get_db
 from users import dependencies as users_dependencies
 from utils.token import create_access_token, get_access_token_payload
@@ -122,13 +123,15 @@ def verify(request: Request, db: Session = Depends(get_db)):
     try:
         payload = get_access_token_payload(request, options={"verify_exp": False})
         user_id = payload.get("id")
-        user = users_dependencies.get_user(db, user_id)
-        is_admin = user.is_admin
-        is_active = user.is_active
+
+        admin_scope = users_dependencies.get_user_department_admin(db, user_id)
+        visible_departments = departments_dependencies.get_viewable_departments(
+            db, user_id
+        )
 
         permission_data = {
-            "is_admin": is_admin,
-            "is_active": is_active,
+            "admin": admin_scope,
+            "visible_departments": visible_departments,
         }
         return permission_data
     except JWTError:

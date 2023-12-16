@@ -45,6 +45,15 @@ def read_user(request: Request, user_id: str, db: Session = Depends(get_db)):
     return data
 
 
+@router.get("/me/departments-admin")
+def read_user_admin_scopes(request: Request, db: Session = Depends(get_db)):
+    payload = get_access_token_payload(request)
+    user_id: str = payload.get("id")
+    scopes = dependencies.get_user_department_admin(db, user_id=user_id)
+
+    return scopes
+
+
 @router.put("/status/{user_id}", dependencies=[Depends(admin_middleware)])
 def update_user_active_status(
     is_active: Annotated[bool, Form()], user_id: str, db: Session = Depends(get_db)

@@ -58,6 +58,29 @@ def get_viewable_departments(db: Session, user_id: str):
     return viewable_departments
 
 
+def get_departments_status(db: Session, user_id: str):
+    visible_departments = (
+        db.query(models.Department)
+        .join(UserDepartment, UserDepartment.user_id == user_id)
+        .filter(UserDepartment.status == "APPROVED")
+        .filter(models.Department.id == UserDepartment.department_id)
+        .all()
+    )
+
+    pending_departments = (
+        db.query(models.Department)
+        .join(UserDepartment, UserDepartment.user_id == user_id)
+        .filter(UserDepartment.status == "PENDING")
+        .filter(models.Department.id == UserDepartment.department_id)
+        .all()
+    )
+
+    return {
+        "visible": visible_departments,
+        "pending": pending_departments,
+    }
+
+
 def request_view_department(db: Session, request: Dict):
     if (
         db.query(models.Department)

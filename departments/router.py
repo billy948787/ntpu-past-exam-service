@@ -54,6 +54,13 @@ def check_user_is_department_admin(
     }
 
 
+@router.get("/status")
+def read_user_departments_status(request: Request, db: Session = Depends(get_db)):
+    payload = get_access_token_payload(request)
+    user_id = payload.get("id")
+    return dependencies.get_departments_status(db, user_id)
+
+
 @router.get("/visible")
 def read_user_viewable_departments(request: Request, db: Session = Depends(get_db)):
     payload = get_access_token_payload(request)

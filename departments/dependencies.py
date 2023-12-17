@@ -148,8 +148,10 @@ def get_department_information(db: Session, department_id: str):
 
 
 def get_join_requests(db: Session, department_id: str):
-    items = (
-        db.query(UserDepartment, User)
+    requests = (
+        db.query(
+            UserDepartment.id, User.id, User.email, User.username, User.readable_name
+        )
         .filter(
             (UserDepartment.department_id == department_id)
             & (UserDepartment.status == "PENDING")
@@ -158,22 +160,32 @@ def get_join_requests(db: Session, department_id: str):
         .all()
     )
 
-    results = []
+    result = []
 
-    for u_d, user in items:
-        results.append(
+    for request_id, user_id, email, username, readable_name in requests:
+        result.append(
             {
-                **user.__dict__,
-                **u_d.__dict__,
+                "status": "PENDING",
+                "user_id": user_id,
+                "email": email,
+                "username": username,
+                "readable_name": readable_name,
+                "id": request_id,
             }
         )
 
-    return results
+    return result
 
 
 def get_department_members(db: Session, department_id: str):
-    items = (
-        db.query(UserDepartment, User)
+    members = (
+        db.query(
+            UserDepartment.is_department_admin,
+            User.id,
+            User.email,
+            User.username,
+            User.readable_name,
+        )
         .filter(
             (UserDepartment.department_id == department_id)
             & (UserDepartment.status == "APPROVED")
@@ -182,14 +194,18 @@ def get_department_members(db: Session, department_id: str):
         .all()
     )
 
-    results = []
+    result = []
 
-    for u_d, user in items:
-        results.append(
+    for is_department_admin, user_id, email, username, readable_name in members:
+        result.append(
             {
-                **user.__dict__,
-                **u_d.__dict__,
+                "id": user_id,
+                "user_id": user_id,
+                "email": email,
+                "username": username,
+                "readable_name": readable_name,
+                "is_department_admin": is_department_admin,
             }
         )
 
-    return results
+    return result

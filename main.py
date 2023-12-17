@@ -35,8 +35,9 @@ app.add_exception_handler(HTTPException, http_exception_handler)
 app.add_exception_handler(Exception, unhandled_exception_handler)
 
 origins = [
-    "*.ntpu.*",
     "*.zeabur.app",
+    "https://past-exam.ntpu.cc",
+    "https://past-exam.ntpu.xyz",
     "http://localhost",
     "http://localhost:3000",
     "http://localhost:8080",

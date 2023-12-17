@@ -25,21 +25,15 @@ def update_user_admin(db: Session, user_id: str, is_admin: bool):
 
 
 def get_user_department_admin(db: Session, user_id: str):
-    items = (
-        db.query(models.UserDepartment, Department)
-        .filter(
-            (models.UserDepartment.user_id == user_id)
-            & (models.UserDepartment.is_department_admin)
-        )
-        .join(Department, Department.id == models.UserDepartment.department_id)
-        .all()
+    sub_query = db.query(models.UserDepartment.department_id).filter(
+        # pylint: disable-next=singleton-comparison
+        (models.UserDepartment.is_department_admin == True)
+        & (models.UserDepartment.user_id == user_id)
+        & (models.UserDepartment.department_id == Department.id)
     )
 
-    results = []
-
-    for ud, d in items:
-        results.append({**ud.__dict__, **d.__dict__})
-    return results
+    items = db.query(Department).filter(sub_query.exists()).all()
+    return items
 
 
 def get_user(db: Session, user_id: str):

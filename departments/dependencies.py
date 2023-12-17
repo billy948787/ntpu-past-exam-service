@@ -47,33 +47,33 @@ def get_departments(db: Session):
 
 
 def get_viewable_departments(db: Session, user_id: str):
-    viewable_departments = (
-        db.query(models.Department)
-        .join(UserDepartment, UserDepartment.user_id == user_id)
-        .filter(UserDepartment.status == "APPROVED")
-        .filter(models.Department.id == UserDepartment.department_id)
-        .all()
+    sub_query = db.query(UserDepartment.department_id).filter(
+        (UserDepartment.status == "APPROVED")
+        & (UserDepartment.user_id == user_id)
+        & (models.Department.id == UserDepartment.department_id)
     )
+
+    viewable_departments = db.query(models.Department).filter(sub_query.exists()).all()
 
     return viewable_departments
 
 
 def get_departments_status(db: Session, user_id: str):
-    visible_departments = (
-        db.query(models.Department)
-        .join(UserDepartment, UserDepartment.user_id == user_id)
-        .filter(UserDepartment.status == "APPROVED")
-        .filter(models.Department.id == UserDepartment.department_id)
-        .all()
+    sub_query = db.query(UserDepartment.department_id).filter(
+        (UserDepartment.status == "APPROVED")
+        & (UserDepartment.user_id == user_id)
+        & (models.Department.id == UserDepartment.department_id)
     )
 
-    pending_departments = (
-        db.query(models.Department)
-        .join(UserDepartment, UserDepartment.user_id == user_id)
-        .filter(UserDepartment.status == "PENDING")
-        .filter(models.Department.id == UserDepartment.department_id)
-        .all()
+    visible_departments = db.query(models.Department).filter(sub_query.exists()).all()
+
+    sub_query = db.query(UserDepartment.department_id).filter(
+        (UserDepartment.status == "PENDING")
+        & (UserDepartment.user_id == user_id)
+        & (models.Department.id == UserDepartment.department_id)
     )
+
+    pending_departments = db.query(models.Department).filter(sub_query.exists()).all()
 
     return {
         "visible": visible_departments,

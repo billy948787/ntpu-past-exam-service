@@ -34,18 +34,18 @@ app.add_exception_handler(RequestValidationError, request_validation_exception_h
 app.add_exception_handler(HTTPException, http_exception_handler)
 app.add_exception_handler(Exception, unhandled_exception_handler)
 
-# origins = [
-#     "*.zeabur.app",
-#     "https://past-exam.ntpu.cc",
-#     "https://past-exam.ntpu.xyz",
-#     "http://localhost",
-#     "http://localhost:3000",
-#     "http://localhost:8080",
-# ]
+origins = [
+    "https://past-exam.zeabur.app",
+    "https://past-exam.ntpu.cc",
+    "https://past-exam.ntpu.xyz",
+    "http://localhost",
+    "http://localhost:3000",
+    "http://localhost:8080",
+]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

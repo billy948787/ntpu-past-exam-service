@@ -94,14 +94,14 @@ def login(
 
     access_token = create_access_token(
         data={
-            "sub": user.username,
+            "sub": user.id,
             "type": "access",
             "id": user.id,
         }
     )
     refresh_token = create_access_token(
         data={
-            "sub": user.username,
+            "sub": user.id,
             "type": "refresh",
             "id": user.id,
         },
@@ -139,27 +139,20 @@ def verify(request: Request, db: Session = Depends(get_db)):
 def refresh(request: Request, db: Session = Depends(get_db)):
     try:
         payload = get_access_token_payload(request)
-        username: str = payload.get("sub")
         user_id: str = payload.get("id")
         user = users_dependencies.get_user(db, user_id)
-        is_admin = user.is_admin
-        is_active = user.is_active
         access_token = create_access_token(
             data={
-                "sub": username,
+                "sub": user.id,
                 "type": "access",
-                "id": user_id,
-                "is_admin": is_admin,
-                "is_active": is_active,
+                "id": user.id,
             },
         )
         refresh_token = create_access_token(
             data={
-                "sub": username,
+                "sub": user.id,
                 "type": "refresh",
-                "id": user_id,
-                "is_admin": is_admin,
-                "is_active": is_active,
+                "id": user.id,
             },
             expires_delta=365,
         )

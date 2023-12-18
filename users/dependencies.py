@@ -25,6 +25,9 @@ def update_user_admin(db: Session, user_id: str, is_admin: bool):
 
 
 def get_user_department_admin(db: Session, user_id: str):
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if user.is_super_user:
+        return db.query(Department).all()
     sub_query = db.query(models.UserDepartment.department_id).filter(
         # pylint: disable-next=singleton-comparison
         (models.UserDepartment.is_department_admin == True)

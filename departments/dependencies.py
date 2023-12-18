@@ -53,6 +53,9 @@ def get_departments(db: Session):
 
 
 def get_viewable_departments(db: Session, user_id: str):
+    user = db.query(User).filter(User.id == user_id).first()
+    if user.is_super_user:
+        return db.query(models.Department).all()
     sub_query = db.query(UserDepartment.department_id).filter(
         (UserDepartment.status == "APPROVED")
         & (UserDepartment.user_id == user_id)
@@ -65,6 +68,12 @@ def get_viewable_departments(db: Session, user_id: str):
 
 
 def get_departments_status(db: Session, user_id: str):
+    user = db.query(User).filter(User.id == user_id).first()
+    if user.is_super_user:
+        return {
+            "visible": db.query(models.Department).all(),
+            "pending": [],
+        }
     sub_query = db.query(UserDepartment.department_id).filter(
         (UserDepartment.status == "APPROVED")
         & (UserDepartment.user_id == user_id)

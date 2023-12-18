@@ -8,7 +8,7 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.9"
 fastapi = "^0.104.1"
-uvicorn = "^0.24.0.post1"
+uvicorn = {extras = ["standard"], version = "^0.24.0.post1"}
 pylint = "^3.0.2"
 black = "^23.11.0"
 pre-commit = "^3.5.0"
@@ -25,6 +25,7 @@ python-multipart = "^0.0.6"
 python-jose = "^3.3.0"
 beautifulsoup4 = "^4.12.2"
 logtail-python = "^0.2.7"
+gunicorn = "^21.2.0"
 
 
 [build-system]

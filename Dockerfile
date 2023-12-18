@@ -26,4 +26,4 @@ EXPOSE 443
 
 
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "443"]
+CMD ["gunicorn", "main:app", "--workers", "8", "--worker-class", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:443"]

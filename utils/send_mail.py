@@ -244,5 +244,5 @@ def send_notification_mail(title, content, recipients, cta=None):
                 "Data": f"{'測試環境 - ' if os.getenv('SERVICE_NAME') != 'PROD' else ''}{title} - 北大考古題 NTPU Past Exam",
             },
         },
-        Source="NTPU Tools <no-reply@ntpu.xyz>",
+        Source=f"NTPU Tools <{os.getenv('AWS_EMAIL_SENDER')}>",
     )

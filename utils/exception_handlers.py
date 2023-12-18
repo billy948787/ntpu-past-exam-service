@@ -1,4 +1,5 @@
 # pylint: skip-file
+import gc
 import os
 import sys
 from typing import Union
@@ -39,6 +40,7 @@ async def request_validation_exception_handler(
             "env": SERVICE_NAME,
         },
     )
+    gc.collect()
     return await _request_validation_exception_handler(request, exc)
 
 
@@ -49,6 +51,7 @@ async def http_exception_handler(
     This is a wrapper to the default HTTPException handler of FastAPI.
     This function will be called when a HTTPException is explicitly raised.
     """
+    gc.collect()
     return await _http_exception_handler(request, exc)
 
 
@@ -59,7 +62,7 @@ async def unhandled_exception_handler(
     This middleware will log all unhandled exceptions.
     Unhandled exceptions are all exceptions that are not HTTPExceptions or RequestValidationErrors.
     """
-
+    gc.collect()
     logger.exception(
         exc,
         extra={

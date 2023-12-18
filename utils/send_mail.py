@@ -241,7 +241,7 @@ def send_notification_mail(title, content, recipients, cta=None):
             },
             "Subject": {
                 "Charset": CHARSET,
-                "Data": f"{title} - 北大考古題 NTPU Past Exam",
+                "Data": f"{'測試環境 - ' if os.getenv('SERVICE_NAME') != 'PROD' else ''}{title} - 北大考古題 NTPU Past Exam",
             },
         },
         Source="NTPU Tools <no-reply@ntpu.xyz>",

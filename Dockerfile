@@ -26,4 +26,4 @@ EXPOSE 443
 
 
 
-CMD ["gunicorn", "main:app", "--workers", "4", "--worker-class", "uvicorn.workers.UvicornWorker", "--max_requests", "100", "--max-requests-jitter", "30", "--bind", "0.0.0.0:443"]
+CMD ["gunicorn", "main:app", "--workers", "4", "--worker-class", "uvicorn.workers.UvicornWorker", "--max-requests", "100", "--max-requests-jitter", "30", "--bind", "0.0.0.0:443"]

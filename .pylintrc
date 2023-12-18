@@ -7,4 +7,5 @@ disable=
     W0707, # (raise-missing-from)
     C0301, # (line-too-long)
     R0913, # (too-many-arguments)
+    R0801, # (duplicate-code)
 ignore-paths=^alembic/versions/.*$

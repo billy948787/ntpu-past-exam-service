@@ -76,21 +76,35 @@ def login(
     db: Session = Depends(get_db),
 ):
     user = users_dependencies.get_user_by_username(db, form_data.username)
-    if not user:
+    try:
+        lms_user_info = dependencies.get_lms_user_info(
+            username=str(int(form_data.username)), password=form_data.password
+        )
+
         hashed_password = get_password_hash(form_data.password)
-        readable_name = dependencies.get_lms_readable_name(
-            username=form_data.username, password=form_data.password
-        )
-        user = users_dependencies.create_user(
-            db,
-            {
-                "username": form_data.username,
-                "hashed_password": hashed_password,
-                "readable_name": readable_name,
-            },
-        )
-    elif not verify_password(form_data.password, user.hashed_password):
-        raise HTTPException(status_code=400, detail="Incorrect username or password")
+
+        user_dict = {
+            "username": form_data.username,
+            "hashed_password": hashed_password,
+            "readable_name": lms_user_info["readable_name"],
+            "school_department": lms_user_info["department"],
+            "email": lms_user_info["email"],
+        }
+        if not user:
+            user = users_dependencies.create_user(
+                db,
+                user_dict,
+            )
+        else:
+            users_dependencies.update_user(
+                db,
+                user_dict,
+            )
+    except ValueError:
+        if not verify_password(form_data.password, user.hashed_password):
+            raise HTTPException(
+                status_code=400, detail="incorrect username or password"
+            )
 
     access_token = create_access_token(
         data={

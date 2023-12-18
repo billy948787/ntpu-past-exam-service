@@ -17,6 +17,7 @@ class User(Base):
     username = Column(String(256), unique=True)
     readable_name = Column(String(256), nullable=True, default=None)
     hashed_password = Column(String(256))
+    school_department = Column(String(256))
 
 
 class UserDepartment(Base):

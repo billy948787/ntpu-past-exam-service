@@ -3,7 +3,7 @@ from bs4 import BeautifulSoup
 from fastapi import HTTPException
 
 
-def get_lms_readable_name(username: str, password: str):
+def get_lms_user_info(username: str, password: str):
     response = requests.post(
         "https://cof.ntpu.edu.tw/pls/pm/stud_system.login",
         data={
@@ -29,4 +29,18 @@ def get_lms_readable_name(username: str, password: str):
 
     user_info_page = requests.get(user_info_link, cookies=cookies, timeout=10)
     user_info_soup = BeautifulSoup(user_info_page.text, "html.parser")
-    return user_info_soup.find(text="(選課說明：").parent.find_all("span")[3].text
+
+    readable_name = user_info_soup.find(text="(選課說明：").parent.find_all("span")[3].text
+    department = user_info_soup.find(text="(選課說明：").parent.find_all("span")[1].text
+
+    contact_link = f"https://cof.ntpu.edu.tw/pls/univer/query_all_course.judge?func=18&date1={timestamp}"
+    contact_page = requests.get(contact_link, cookies=cookies, timeout=10)
+    contact_soup = BeautifulSoup(contact_page.text, "html.parser")
+
+    email = contact_soup.find("input", {"type": "email"}).get("value")
+
+    return {
+        "readable_name": readable_name,
+        "department": department,
+        "email": email,
+    }

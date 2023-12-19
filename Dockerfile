@@ -22,8 +22,8 @@ COPY --from=builder ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 
 COPY . .
 
-EXPOSE 443
+EXPOSE 8000
 
 
 
-CMD ["gunicorn", "main:app", "--workers", "4", "--worker-class", "uvicorn.workers.UvicornWorker", "--max-requests", "100", "--max-requests-jitter", "30", "--bind", "0.0.0.0:443"]
+CMD ["gunicorn", "main:app", "--workers", "4", "--worker-class", "uvicorn.workers.UvicornWorker", "--max-requests", "100", "--max-requests-jitter", "30", "--bind", "0.0.0.0:8000"]

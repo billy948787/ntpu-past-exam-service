@@ -121,15 +121,16 @@ def make_post(db: Session, post: Dict, user_id: str, file_array: List[bytes]):
             if admin.email is not None
             else f"s{admin.username}@gm.ntpu.edu.tw"
         )
-    send_notification_mail(
-        title="考古題審核",
-        content=f"有人在您所管理的 {department.name} 社群發布考古題，請儘速審核。",
-        recipients=recipients,
-        cta={
-            "text": "前往審核",
-            "link": f"{domain}/admin/{department.id}?open_edit_post_dialog=true&edit_post_detail_id={db_post.id}",
-        },
-    )
+    if len(recipients) > 0:
+        send_notification_mail(
+            title="考古題審核",
+            content=f"有人在您所管理的 {department.name} 社群發布考古題，請儘速審核。",
+            recipients=recipients,
+            cta={
+                "text": "前往審核",
+                "link": f"{domain}/admin/{department.id}?open_edit_post_dialog=true&edit_post_detail_id={db_post.id}",
+            },
+        )
     return db_post
 
 

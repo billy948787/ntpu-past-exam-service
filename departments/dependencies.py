@@ -135,15 +135,16 @@ def request_view_department(db: Session, request: Dict):
             else f"s{admin.username}@gm.ntpu.edu.tw"
         )
 
-    send_notification_mail(
-        title="請求審核",
-        content=f"有人申請瀏覽您所管理的 {department.name} 社群，請儘速審核。",
-        recipients=recipients,
-        cta={
-            "text": "前往審核",
-            "link": f"{domain}/admin/{department.id}?open_edit_member_dialog=true",
-        },
-    )
+    if len(recipients) > 0:
+        send_notification_mail(
+            title="請求審核",
+            content=f"有人申請瀏覽您所管理的 {department.name} 社群，請儘速審核。",
+            recipients=recipients,
+            cta={
+                "text": "前往審核",
+                "link": f"{domain}/admin/{department.id}?open_edit_member_dialog=true",
+            },
+        )
 
     return db_request
 

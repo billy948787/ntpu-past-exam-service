@@ -23,6 +23,7 @@ def read_users(
     data = []
     for user in users:
         u = user.__dict__
+        del u["hashed_password"]
         data.append(u)
     return data
 
@@ -36,6 +37,7 @@ def read_user(request: Request, user_id: str, db: Session = Depends(get_db)):
     if db_user is None:
         raise HTTPException(status_code=404, detail="User not found")
     data = db_user.__dict__
+    del data["hashed_password"]
     return data
 
 

@@ -26,4 +26,4 @@ EXPOSE 8000
 
 
 
-CMD ["gunicorn", "main:app", "--workers", "4", "--threads", "4", "--worker-class", "uvicorn.workers.UvicornWorker", "--max-requests", "100", "--max-requests-jitter", "30", "--bind", "0.0.0.0:8000"]
+CMD ["gunicorn", "main:app", "--workers", "8", "--threads", "4", "--worker-class", "uvicorn.workers.UvicornWorker", "--max-requests", "100", "--max-requests-jitter", "30", "--bind", "0.0.0.0:8000"]

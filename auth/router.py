@@ -133,8 +133,8 @@ def verify(request: Request, db: Session = Depends(get_db)):
         payload = get_access_token_payload(request, options={"verify_exp": False})
         user_id = payload.get("id")
 
-        admin_scope = users_dependencies.get_user_department_admin(db, user_id)
-        visible_departments = departments_dependencies.get_viewable_departments(
+        admin_scope = users_dependencies.get_user_department_admin_ids(db, user_id)
+        visible_departments = departments_dependencies.get_viewable_departments_ids(
             db, user_id
         )
 

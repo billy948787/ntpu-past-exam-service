@@ -234,7 +234,12 @@ def get_department_information(db: Session, department_id: str):
 def get_join_requests(db: Session, department_id: str):
     requests = (
         db.query(
-            UserDepartment.id, User.id, User.email, User.username, User.readable_name
+            UserDepartment.id,
+            User.id,
+            User.email,
+            User.username,
+            User.readable_name,
+            User.school_department,
         )
         .filter(
             (UserDepartment.department_id == department_id)
@@ -246,7 +251,14 @@ def get_join_requests(db: Session, department_id: str):
 
     result = []
 
-    for request_id, user_id, email, username, readable_name in requests:
+    for (
+        request_id,
+        user_id,
+        email,
+        username,
+        readable_name,
+        school_department,
+    ) in requests:
         result.append(
             {
                 "status": "PENDING",
@@ -254,6 +266,7 @@ def get_join_requests(db: Session, department_id: str):
                 "email": email,
                 "username": username,
                 "readable_name": readable_name,
+                "school_department": school_department,
                 "id": request_id,
             }
         )
@@ -281,6 +294,7 @@ def get_department_members(db: Session, department_id: str):
             User.email,
             User.username,
             User.readable_name,
+            User.school_department,
         )
         .filter(
             (UserDepartment.department_id == department_id)
@@ -292,7 +306,14 @@ def get_department_members(db: Session, department_id: str):
 
     result = []
 
-    for is_department_admin, user_id, email, username, readable_name in members:
+    for (
+        is_department_admin,
+        user_id,
+        email,
+        username,
+        readable_name,
+        school_department,
+    ) in members:
         result.append(
             {
                 "id": user_id,
@@ -300,6 +321,7 @@ def get_department_members(db: Session, department_id: str):
                 "email": email,
                 "username": username,
                 "readable_name": readable_name,
+                "school_department": school_department,
                 "is_department_admin": is_department_admin,
             }
         )

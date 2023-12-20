@@ -81,11 +81,9 @@ def login(
             username=str(int(form_data.username)), password=form_data.password
         )
 
-        hashed_password = get_password_hash(form_data.password)
 
         user_dict = {
             "username": form_data.username,
-            "hashed_password": hashed_password,
             "readable_name": lms_user_info["readable_name"],
             "school_department": lms_user_info["department"],
             "email": lms_user_info["email"],

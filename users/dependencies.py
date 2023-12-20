@@ -70,27 +70,50 @@ def get_users(db: Session, is_active: bool, skip: int = 0, limit: int = 100):
 
 
 def create_user(db: Session, user: schemas.UserCreate):
-    db_user = models.User(
-        username=user["username"],
-        hashed_password=user["hashed_password"],
-        readable_name=user["readable_name"],
-        school_department=user["school_department"],
-        email=user["email"],
-    )
-    db.add(db_user)
-    db.commit()
-    db.refresh(db_user)
-    return db_user
+    try:
+        db_user = models.User(
+            username=user["username"],
+            hashed_password=user["hashed_password"],
+            readable_name=user["readable_name"],
+            school_department=user["school_department"],
+            email=user["email"],
+        )
+        db.add(db_user)
+        db.commit()
+        db.refresh(db_user)
+        return db_user
+    except KeyError:
+        db_user = models.User(
+            username=user["username"],
+            readable_name=user["readable_name"],
+            school_department=user["school_department"],
+            email=user["email"],
+        )
+        db.add(db_user)
+        db.commit()
+        db.refresh(db_user)
+        return db_user
 
 
 def update_user(db: Session, user: schemas.UserCreate):
-    db.query(models.User).filter(models.User.username == user["username"]).update(
-        {
-            "username": user["username"],
-            "hashed_password": user["hashed_password"],
-            "readable_name": user["readable_name"],
-            "school_department": user["school_department"],
-            "email": user["email"],
-        }
-    )
-    db.commit()
+    try:
+        db.query(models.User).filter(models.User.username == user["username"]).update(
+            {
+                "username": user["username"],
+                "hashed_password": user["hashed_password"],
+                "readable_name": user["readable_name"],
+                "school_department": user["school_department"],
+                "email": user["email"],
+            }
+        )
+        db.commit()
+    except KeyError:
+        db.query(models.User).filter(models.User.username == user["username"]).update(
+            {
+                "username": user["username"],
+                "readable_name": user["readable_name"],
+                "school_department": user["school_department"],
+                "email": user["email"],
+            }
+        )
+        db.commit()

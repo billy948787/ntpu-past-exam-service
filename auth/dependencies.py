@@ -1,6 +1,12 @@
 import requests
 from bs4 import BeautifulSoup
+from dotenv import load_dotenv
 from fastapi import HTTPException
+import json
+import os
+
+load_dotenv()
+
 
 
 def get_lms_user_info(username: str, password: str):
@@ -44,3 +50,28 @@ def get_lms_user_info(username: str, password: str):
         "department": department,
         "email": email,
     }
+
+
+def exchange_token_with_google(code: str, redirect_uri: str):
+    try:
+        response = requests.post('https://oauth2.googleapis.com/token', data={
+            'client_id': os.getenv('GOOGLE_SERVICE_CLIENT_ID'),
+            'client_secret': os.getenv('GOOGLE_SERVICE_SERCET'),
+            "code": code,
+            "redirect_uri": redirect_uri,
+            "grant_type": "authorization_code"
+        })
+
+        data = json.loads(response.text)
+        google_access_token = data['access_token']
+
+        info_url = 'https://www.googleapis.com/oauth2/v1/userinfo'
+        info_response = requests.get(info_url, headers={
+            'Authorization': f'Bearer {google_access_token}'
+        })
+        user_data = json.loads(info_response.text)
+        if user_data["hd"] != 'gm.ntpu.edu.tw':
+            raise HTTPException(status_code=403)
+        return user_data
+    except KeyError:
+        raise HTTPException(status_code=403)

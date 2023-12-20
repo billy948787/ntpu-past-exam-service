@@ -1,7 +1,7 @@
 from typing import Annotated, Optional
 
 from dotenv import load_dotenv
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status, Form
 from fastapi.security import OAuth2PasswordRequestForm
 from jose import ExpiredSignatureError, JWTError
 from passlib.context import CryptContext
@@ -69,6 +69,51 @@ def get_password_hash(password):
 def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
 
+
+@router.post("/exchange")
+def login_with_google(code: Annotated[str, Form()], redirect_uri: Annotated[str, Form()] ,db: Session = Depends(get_db)):
+    user_data_from_google = dependencies.exchange_token_with_google(code=code, redirect_uri=redirect_uri)
+    school_id = str(user_data_from_google['email'])[1:10]
+    user = users_dependencies.get_user_by_username(db, school_id)
+
+    user_dict = {
+        "username": school_id,
+        "readable_name": user_data_from_google['name'],
+        "school_department": ' ',
+        "email": user_data_from_google["email"],
+    }
+    if not user:
+        user = users_dependencies.create_user(
+            db,
+            user_dict,
+        )
+    else:
+        users_dependencies.update_user(
+            db,
+            user_dict,
+        )
+
+    access_token = create_access_token(
+        data={
+            "sub": user.id,
+            "type": "access",
+            "id": user.id,
+        }
+    )
+    refresh_token = create_access_token(
+        data={
+            "sub": user.id,
+            "type": "refresh",
+            "id": user.id,
+        },
+        expires_delta=365,
+    )
+
+    return {
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "token_type": "bearer",
+    }
 
 @router.post("/login")
 def login(

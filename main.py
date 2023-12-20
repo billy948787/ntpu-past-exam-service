@@ -26,7 +26,10 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 models.Base.metadata.create_all(bind=engine)
 
 
-app = FastAPI()
+app = FastAPI(
+    docs_url=None,
+    redoc_url=None,
+)
 
 
 app.middleware("http")(log_request_middleware)

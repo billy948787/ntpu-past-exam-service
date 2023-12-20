@@ -1,7 +1,7 @@
 from typing import Annotated, Optional
 
 from dotenv import load_dotenv
-from fastapi import APIRouter, Depends, HTTPException, Request, status, Form
+from fastapi import APIRouter, Depends, Form, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
 from jose import ExpiredSignatureError, JWTError
 from passlib.context import CryptContext
@@ -59,6 +59,15 @@ async def admin_middleware(request: Request):
     # raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
 
+async def super_user_middleware(request: Request):
+    payload = get_access_token_payload(request)
+    try:
+        if not payload["isu"]:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+    except KeyError:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+
+
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
@@ -71,15 +80,21 @@ def verify_password(plain_password, hashed_password):
 
 
 @router.post("/exchange")
-def login_with_google(code: Annotated[str, Form()], redirect_uri: Annotated[str, Form()] ,db: Session = Depends(get_db)):
-    user_data_from_google = dependencies.exchange_token_with_google(code=code, redirect_uri=redirect_uri)
-    school_id = str(user_data_from_google['email'])[1:10]
+def login_with_google(
+    code: Annotated[str, Form()],
+    redirect_uri: Annotated[str, Form()],
+    db: Session = Depends(get_db),
+):
+    user_data_from_google = dependencies.exchange_token_with_google(
+        code=code, redirect_uri=redirect_uri
+    )
+    school_id = str(user_data_from_google["email"])[1:10]
     user = users_dependencies.get_user_by_username(db, school_id)
 
     user_dict = {
         "username": school_id,
-        "readable_name": user_data_from_google['name'],
-        "school_department": ' ',
+        "readable_name": user_data_from_google["name"],
+        "school_department": " ",
         "email": user_data_from_google["email"],
     }
     if not user:
@@ -115,6 +130,7 @@ def login_with_google(code: Annotated[str, Form()], redirect_uri: Annotated[str,
         "token_type": "bearer",
     }
 
+
 @router.post("/login")
 def login(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
@@ -125,7 +141,6 @@ def login(
         lms_user_info = dependencies.get_lms_user_info(
             username=str(int(form_data.username)), password=form_data.password
         )
-
 
         user_dict = {
             "username": form_data.username,
@@ -153,6 +168,7 @@ def login(
         data={
             "sub": user.id,
             "type": "access",
+            "isu": user.is_super_user,
             "id": user.id,
         }
     )
@@ -160,6 +176,7 @@ def login(
         data={
             "sub": user.id,
             "type": "refresh",
+            "isu": user.is_super_user,
             "id": user.id,
         },
         expires_delta=365,
@@ -202,6 +219,7 @@ def refresh(request: Request, db: Session = Depends(get_db)):
             data={
                 "sub": user.id,
                 "type": "access",
+                "isu": user.is_super_user,
                 "id": user.id,
             },
         )
@@ -209,6 +227,7 @@ def refresh(request: Request, db: Session = Depends(get_db)):
             data={
                 "sub": user.id,
                 "type": "refresh",
+                "isu": user.is_super_user,
                 "id": user.id,
             },
             expires_delta=365,
@@ -223,7 +242,7 @@ def refresh(request: Request, db: Session = Depends(get_db)):
         raise credentials_exception
 
 
-@router.post("/create_user")
+@router.post("/create_user", dependencies=[Depends(super_user_middleware)])
 def create_user(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     db: Session = Depends(get_db),

@@ -28,15 +28,23 @@ def get_user_department_admin_ids(db: Session, user_id: str):
     user = db.query(models.User).filter(models.User.id == user_id).first()
     is_admin_departments = []
     if user.is_super_user:
-
         for department in db.query(Department).all():
             is_admin_departments.append(department.id)
 
     else:
-        for record in db.query(models.UserDepartment).filter((models.UserDepartment.is_department_admin == True) & (models.UserDepartment.user_id == user_id)).all():
+        for record in (
+            db.query(models.UserDepartment)
+            .filter(
+                # pylint: disable-next=singleton-comparison
+                (models.UserDepartment.is_department_admin == True)
+                & (models.UserDepartment.user_id == user_id)
+            )
+            .all()
+        ):
             is_admin_departments.append(record.department_id)
 
     return is_admin_departments
+
 
 def get_user_department_admin(db: Session, user_id: str):
     user = db.query(models.User).filter(models.User.id == user_id).first()

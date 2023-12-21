@@ -9,7 +9,6 @@ ENV POETRY_NO_INTERACTION=1 \
 
 
 COPY pyproject.toml poetry.lock ./
-RUN touch README.md
 
 RUN --mount=type=cache,target=$POETRY_CACHE_DIR poetry install --without dev --no-root
 
@@ -24,6 +23,4 @@ COPY . .
 
 EXPOSE 8080
 
-
-
-CMD ["gunicorn", "main:app", "--workers", "8", "--threads", "4", "--worker-class", "uvicorn.workers.UvicornWorker", "--max-requests", "1000", "--max-requests-jitter", "30", "--bind", "0.0.0.0:8080"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]

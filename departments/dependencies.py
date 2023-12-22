@@ -62,9 +62,13 @@ def get_viewable_departments(db: Session, user_id: str):
         & (models.Department.id == UserDepartment.department_id)
     )
 
-    viewable_departments = db.query(models.Department).filter(sub_query.exists()).all()
+    visible_departments = (
+        db.query(models.Department)
+        .filter((sub_query.exists()) | (models.Department.is_public == True))
+        .all()
+    )
 
-    return viewable_departments
+    return visible_departments
 
 
 def get_viewable_departments_ids(db: Session, user_id: str):
@@ -75,15 +79,20 @@ def get_viewable_departments_ids(db: Session, user_id: str):
             viewable_departments.append(department.id)
 
     else:
-        for record in (
-            db.query(UserDepartment)
-            .filter(
-                (UserDepartment.status == "APPROVED")
-                & (UserDepartment.user_id == user_id)
-            )
+        sub_query = db.query(UserDepartment.department_id).filter(
+            (UserDepartment.status == "APPROVED")
+            & (UserDepartment.user_id == user_id)
+            & (models.Department.id == UserDepartment.department_id)
+        )
+
+        visible_departments = (
+            db.query(models.Department)
+            .filter((sub_query.exists()) | (models.Department.is_public == True))
             .all()
-        ):
-            viewable_departments.append(record.department_id)
+        )
+
+        for record in visible_departments:
+            viewable_departments.append(record.id)
 
     return viewable_departments
 
@@ -101,7 +110,11 @@ def get_departments_status(db: Session, user_id: str):
         & (models.Department.id == UserDepartment.department_id)
     )
 
-    visible_departments = db.query(models.Department).filter(sub_query.exists()).all()
+    visible_departments = (
+        db.query(models.Department)
+        .filter((sub_query.exists()) | (models.Department.is_public == True))
+        .all()
+    )
 
     sub_query = db.query(UserDepartment.department_id).filter(
         (UserDepartment.status == "PENDING")
@@ -297,7 +310,6 @@ def get_join_requests(db: Session, department_id: str):
 
 def get_department_admins(db: Session, department_id: str):
     sub_query = db.query(UserDepartment.department_id).filter(
-        # pylint: disable-next=singleton-comparison
         (UserDepartment.is_department_admin == True)
         & (UserDepartment.department_id == department_id)
         & (UserDepartment.user_id == User.id)

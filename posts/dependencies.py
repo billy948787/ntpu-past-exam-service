@@ -31,9 +31,7 @@ def get_posts(
 
     if status == "PENDING":
         query_filter.append(
-            (models.Post.status != "APPROVED")
-            # pylint: disable-next=singleton-comparison
-            | (models.Post.status == None)
+            (models.Post.status != "APPROVED") | (models.Post.status == None)
         )
     elif status == "APPROVED":
         query_filter.append(models.Post.status == "APPROVED")
@@ -92,8 +90,10 @@ def get_post(db: Session, post_id: str):
 
 
 def make_post(db: Session, post: Dict, user_id: str, file_array: List[bytes]):
+    department = get_department_information(db, post["department_id"])
     db_post = models.Post(
         **post,
+        status="APPROVED" if department.is_public else "PENDING",
         owner_id=user_id,
     )
     db.add(db_post)
@@ -112,25 +112,25 @@ def make_post(db: Session, post: Dict, user_id: str, file_array: List[bytes]):
     db.commit()
     db.refresh(db_post)
 
-    department = get_department_information(db=db, department_id=post["department_id"])
-    admins = get_department_admins(db=db, department_id=post["department_id"])
-    recipients = []
-    for admin in admins:
-        recipients.append(
-            admin.email
-            if admin.email is not None
-            else f"s{admin.username}@gm.ntpu.edu.tw"
-        )
-    if len(recipients) > 0:
-        send_notification_mail(
-            title="考古題審核",
-            content=f"有人在您所管理的 {department.name} 社群發布考古題，請儘速審核。",
-            recipients=recipients,
-            cta={
-                "text": "前往審核",
-                "link": f"{domain}/admin/{department.id}?open_edit_post_dialog=true&edit_post_detail_id={db_post.id}",
-            },
-        )
+    if not department.is_public:
+        admins = get_department_admins(db=db, department_id=post["department_id"])
+        recipients = []
+        for admin in admins:
+            recipients.append(
+                admin.email
+                if admin.email is not None
+                else f"s{admin.username}@gm.ntpu.edu.tw"
+            )
+        if len(recipients) > 0:
+            send_notification_mail(
+                title="考古題審核",
+                content=f"有人在您所管理的 {department.name} 社群發布考古題，請儘速審核。",
+                recipients=recipients,
+                cta={
+                    "text": "前往審核",
+                    "link": f"{domain}/admin/{department.id}?open_edit_post_dialog=true&edit_post_detail_id={db_post.id}",
+                },
+            )
     return db_post
 
 

@@ -8,4 +8,5 @@ disable=
     C0301, # (line-too-long)
     R0913, # (too-many-arguments)
     R0801, # (duplicate-code)
+    C0121, # (singleton-comparison)
 ignore-paths=^alembic/versions/.*$

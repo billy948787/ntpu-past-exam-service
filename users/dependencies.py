@@ -35,7 +35,6 @@ def get_user_department_admin_ids(db: Session, user_id: str):
         for record in (
             db.query(models.UserDepartment)
             .filter(
-                # pylint: disable-next=singleton-comparison
                 (models.UserDepartment.is_department_admin == True)
                 & (models.UserDepartment.user_id == user_id)
             )
@@ -51,7 +50,6 @@ def get_user_department_admin(db: Session, user_id: str):
     if user.is_super_user:
         return db.query(Department).all()
     sub_query = db.query(models.UserDepartment.department_id).filter(
-        # pylint: disable-next=singleton-comparison
         (models.UserDepartment.is_department_admin == True)
         & (models.UserDepartment.user_id == user_id)
         & (models.UserDepartment.department_id == Department.id)
@@ -78,14 +76,10 @@ def get_users(db: Session, is_active: bool, skip: int = 0, limit: int = 100):
 
     if is_active is not None:
         if is_active:
-            # pylint: disable-next=singleton-comparison
             query_filter.append(models.User.is_active == True)
         else:
             query_filter.append(
-                # pylint: disable-next=singleton-comparison
-                (models.User.is_active == False)
-                # pylint: disable-next=singleton-comparison
-                | (models.User.is_active == None)
+                (models.User.is_active == False) | (models.User.is_active == None)
             )
 
     return db.query(models.User).filter(*query_filter).offset(skip).limit(limit).all()

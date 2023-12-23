@@ -2,6 +2,7 @@ import os
 import pickle
 from typing import Any
 
+from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, Request, Response
 from fastapi.exception_handlers import http_exception_handler
 from fastapi.exceptions import RequestValidationError
@@ -35,6 +36,8 @@ app = FastAPI(
     docs_url=None,
     redoc_url=None,
 )
+
+load_dotenv()
 
 
 # pylint: disable-next=keyword-arg-before-vararg
@@ -76,9 +79,9 @@ class ORMJsonCoder(Coder):
 @app.on_event("startup")
 async def startup():
     redis = aioredis.Redis(
-        host=os.environ.get("REDIS_HOST"),
-        password=os.environ.get("REDIS_PASSWORD"),
-        port=int(os.environ.get("REDIS_PORT")),
+        host=os.getenv("REDIS_HOST"),
+        password=os.getenv("REDIS_PASSWORD"),
+        port=int(os.getenv("REDIS_PORT")),
     )
     FastAPICache.init(
         RedisBackend(redis),

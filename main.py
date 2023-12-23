@@ -1,8 +1,15 @@
-from fastapi import Depends, FastAPI
+import os
+import pickle
+from typing import Any
+
+from fastapi import Depends, FastAPI, Request, Response
 from fastapi.exception_handlers import http_exception_handler
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer
+from fastapi_cache import Coder, FastAPICache
+from fastapi_cache.backends.redis import RedisBackend
+from redis import asyncio as aioredis
 from starlette.exceptions import HTTPException
 
 from auth.router import auth_middleware
@@ -22,14 +29,63 @@ from utils.log import log_request_middleware
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
-
 models.Base.metadata.create_all(bind=engine)
-
 
 app = FastAPI(
     docs_url=None,
     redoc_url=None,
 )
+
+
+# pylint: disable-next=keyword-arg-before-vararg
+def request_key_builder(
+    # pylint: disable-next=unused-argument
+    func,
+    namespace: str = "",
+    request: Request = None,
+    # pylint: disable-next=unused-argument
+    response: Response = None,
+    # pylint: disable-next=unused-argument
+    *args,
+    # pylint: disable-next=unused-argument
+    **kwargs,
+):
+    return ":".join(
+        [
+            namespace,
+            request.method.lower(),
+            request.url.path,
+            request.headers.get("authorization"),
+            repr(sorted(request.query_params.items())),
+        ]
+    )
+
+
+class ORMJsonCoder(Coder):
+    @classmethod
+    def encode(cls, value: Any) -> bytes:
+        return pickle.dumps(
+            value,
+        )
+
+    @classmethod
+    def decode(cls, value: bytes) -> Any:
+        return pickle.loads(value)
+
+
+@app.on_event("startup")
+async def startup():
+    redis = aioredis.Redis(
+        host=os.environ.get("REDIS_HOST"),
+        password=os.environ.get("REDIS_PASSWORD"),
+        port=int(os.environ.get("REDIS_PORT")),
+    )
+    FastAPICache.init(
+        RedisBackend(redis),
+        prefix="fastapi-cache",
+        key_builder=request_key_builder,
+        coder=ORMJsonCoder,
+    )
 
 
 app.middleware("http")(log_request_middleware)
@@ -53,7 +109,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 
 app.include_router(
     departments_router,

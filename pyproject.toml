@@ -26,6 +26,7 @@ python-jose = "^3.3.0"
 beautifulsoup4 = "^4.12.2"
 logtail-python = "^0.2.7"
 gunicorn = "^21.2.0"
+fastapi-cache2 = {extras = ["redis"], version = "^0.2.1"}
 
 
 [build-system]

@@ -2,6 +2,7 @@ from typing import Annotated, List
 
 from dotenv import load_dotenv
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
+from fastapi_cache.decorator import cache
 from sqlalchemy.orm import Session
 
 from auth.router import admin_middleware
@@ -37,6 +38,7 @@ def read_all_post(
 
 
 @router.get("/{post_id}")
+@cache(expire=60)
 def get_single_post(post_id: str, db: Session = Depends(get_db)):
     data = dependencies.get_post(db, post_id)
     if data is None:

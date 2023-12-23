@@ -3,6 +3,7 @@ from typing import Annotated, Optional
 from dotenv import load_dotenv
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
+from fastapi_cache.decorator import cache
 from jose import ExpiredSignatureError, JWTError
 from passlib.context import CryptContext
 from pydantic import BaseModel
@@ -190,6 +191,7 @@ def login(
 
 
 @router.get("/verify-token")
+@cache(expire=60)
 def verify(request: Request, db: Session = Depends(get_db)):
     try:
         payload = get_access_token_payload(request, options={"verify_exp": False})

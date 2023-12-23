@@ -1,6 +1,7 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Form, HTTPException
+from fastapi_cache.decorator import cache
 from sqlalchemy.orm import Session
 
 from auth.router import admin_middleware
@@ -12,12 +13,14 @@ router = APIRouter(prefix="/courses")
 
 
 @router.get("", response_model=list[schemas.Course])
+@cache(expire=60)
 def read_courses(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     items = dependencies.get_courses(db, skip=skip, limit=limit)
     return items
 
 
 @router.get("/{course_id}")
+@cache(expire=30)
 def get_single_post(course_id: str, db: Session = Depends(get_db)):
     data = dependencies.get_course(db, course_id)
 

@@ -1,6 +1,7 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
+from fastapi_cache.decorator import cache
 from sqlalchemy.orm import Session
 
 from auth.router import admin_middleware
@@ -29,6 +30,7 @@ def read_users(
 
 
 @router.get("/{user_id}")
+@cache(expire=30)
 def read_user(request: Request, user_id: str, db: Session = Depends(get_db)):
     if user_id == "me":
         payload = get_access_token_payload(request)
@@ -42,6 +44,7 @@ def read_user(request: Request, user_id: str, db: Session = Depends(get_db)):
 
 
 @router.get("/me/departments-admin")
+@cache(expire=30)
 def read_user_admin_scopes(request: Request, db: Session = Depends(get_db)):
     payload = get_access_token_payload(request)
     user_id: str = payload.get("id")

@@ -1,6 +1,7 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Form, Request
+from fastapi_cache.decorator import cache
 from sqlalchemy.orm import Session
 
 from auth.router import admin_middleware
@@ -19,11 +20,13 @@ def read_all_departments(db: Session = Depends(get_db)):
 
 
 @router.get("/{department_id}/courses")
+@cache(expire=60)
 def get_department_courses(department_id: str, db: Session = Depends(get_db)):
     return dependencies.get_department_courses(db, department_id=department_id)
 
 
 @router.get("/{department_id}/bulletins")
+@cache(expire=60)
 def get_department_bulletins(department_id: str, db: Session = Depends(get_db)):
     return dependencies.get_department_bulletins(db, department_id=department_id)
 
@@ -55,6 +58,7 @@ def check_user_is_department_admin(
 
 
 @router.get("/status")
+@cache(expire=60)
 def read_user_departments_status(request: Request, db: Session = Depends(get_db)):
     payload = get_access_token_payload(request)
     user_id = payload.get("id")
@@ -62,6 +66,7 @@ def read_user_departments_status(request: Request, db: Session = Depends(get_db)
 
 
 @router.get("/visible")
+@cache(expire=60)
 def read_user_viewable_departments(request: Request, db: Session = Depends(get_db)):
     payload = get_access_token_payload(request)
     user_id = payload.get("id")

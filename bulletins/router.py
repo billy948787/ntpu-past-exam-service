@@ -30,11 +30,11 @@ def get_single_post(bulletin_id: str, db: Session = Depends(get_db)):
     return data.__dict__
 
 
-@router.post("", dependencies=[Depends(admin_middleware)])
+@router.post("/{department_id}", dependencies=[Depends(admin_middleware)])
 async def create_bulletin(
+    department_id: str,
     title: Annotated[str, Form()],
     content: Annotated[str, Form()],
-    department_id: Annotated[str, Form()],
     db: Session = Depends(get_db),
 ):
     bulletin = {"title": title, "content": content, "department_id": department_id}

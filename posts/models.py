@@ -1,18 +1,11 @@
-import uuid
-
 from sqlalchemy import Boolean, Column, String, Text
 
-from sql.database import Base
+from sql.database import Base, BaseColumn
 
 
-def generate_uuid():
-    return str(uuid.uuid4())
-
-
-class Post(Base):
+class Post(Base, BaseColumn):
     __tablename__ = "posts"
 
-    id = Column(String(256), primary_key=True, default=generate_uuid)
     title = Column(String(256))
     content = Column(Text)
     owner_id = Column(String(256), index=True)
@@ -22,9 +15,8 @@ class Post(Base):
     department_id = Column(String(256), index=True)
 
 
-class PostFile(Base):
+class PostFile(Base, BaseColumn):
     __tablename__ = "posts_files"
 
-    id = Column(String(256), primary_key=True, default=generate_uuid)
     url = Column(Text)
     post_id = Column(String(256), index=True)

@@ -1,18 +1,11 @@
-import uuid
-
 from sqlalchemy import Column, String
 
-from sql.database import Base
+from sql.database import Base, BaseColumn
 
 
-def generate_uuid():
-    return str(uuid.uuid4())
-
-
-class Course(Base):
+class Course(Base, BaseColumn):
     __tablename__ = "courses"
 
-    id = Column(String(256), primary_key=True, default=generate_uuid)
     name = Column(String(256))
     category = Column(String(256))
     department_id = Column(String(256), index=True)

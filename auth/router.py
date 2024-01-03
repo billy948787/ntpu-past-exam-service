@@ -1,3 +1,4 @@
+import json
 from typing import Annotated, Optional
 
 from dotenv import load_dotenv
@@ -53,11 +54,26 @@ async def auth_middleware(request: Request):
 
 
 async def admin_middleware(request: Request):
+    department_id = request.path_params.get("department_id")
     payload = get_access_token_payload(request)
+
+    is_super_user: bool = payload.get("isu")
+    print(is_super_user)
     if payload is None:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
-    # if not is_admin:
-    # raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+    admin_ids: str = payload.get("adm")
+
+    if admin_ids is None:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+
+    admin_ids = json.loads(admin_ids)
+
+    is_department_admin = is_super_user or (
+        department_id is not None and department_id in admin_ids
+    )
+
+    if not is_department_admin:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
 
 async def super_user_middleware(request: Request):
@@ -109,11 +125,15 @@ def login_with_google(
             user_dict,
         )
 
+    department_admin_ids = users_dependencies.get_user_department_admin_ids(db, user.id)
+
     access_token = create_access_token(
         data={
             "sub": user.id,
             "type": "access",
             "id": user.id,
+            "isu": user.is_super_user,
+            "adm": json.dumps(department_admin_ids),
         }
     )
     refresh_token = create_access_token(
@@ -121,6 +141,8 @@ def login_with_google(
             "sub": user.id,
             "type": "refresh",
             "id": user.id,
+            "isu": user.is_super_user,
+            "adm": json.dumps(department_admin_ids),
         },
         expires_delta=365,
     )
@@ -165,12 +187,15 @@ def login(
                 status_code=400, detail="incorrect username or password"
             )
 
+    department_admin_ids = users_dependencies.get_user_department_admin_ids(db, user.id)
+
     access_token = create_access_token(
         data={
             "sub": user.id,
             "type": "access",
             "isu": user.is_super_user,
             "id": user.id,
+            "adm": json.dumps(department_admin_ids),
         }
     )
     refresh_token = create_access_token(
@@ -179,6 +204,7 @@ def login(
             "type": "refresh",
             "isu": user.is_super_user,
             "id": user.id,
+            "adm": json.dumps(department_admin_ids),
         },
         expires_delta=365,
     )
@@ -216,6 +242,7 @@ def refresh(request: Request, db: Session = Depends(get_db)):
     try:
         payload = get_access_token_payload(request)
         user_id: str = payload.get("id")
+        adm: str = payload.get("adm")
         user = users_dependencies.get_user(db, user_id)
         access_token = create_access_token(
             data={
@@ -223,6 +250,7 @@ def refresh(request: Request, db: Session = Depends(get_db)):
                 "type": "access",
                 "isu": user.is_super_user,
                 "id": user.id,
+                "adm": adm,
             },
         )
         refresh_token = create_access_token(
@@ -231,6 +259,7 @@ def refresh(request: Request, db: Session = Depends(get_db)):
                 "type": "refresh",
                 "isu": user.is_super_user,
                 "id": user.id,
+                "adm": adm,
             },
             expires_delta=365,
         )

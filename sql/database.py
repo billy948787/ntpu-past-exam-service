@@ -1,7 +1,8 @@
 import os
+import uuid
 
 from dotenv import load_dotenv
-from sqlalchemy import create_engine
+from sqlalchemy import Column, DateTime, String, create_engine, func
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
@@ -15,6 +16,21 @@ engine = create_engine(SQLALCHEMY_DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
+
+
+def generate_uuid():
+    return str(uuid.uuid4())
+
+
+class BaseColumn(object):  # pylint: disable=useless-object-inheritance
+    id = Column(String(256), primary_key=True, default=generate_uuid)
+    create_time = Column(
+        DateTime(timezone=True),
+        server_default=func.now(),  # pylint: disable=not-callable
+    )
+    updated_time = Column(
+        DateTime(timezone=True), onupdate=func.now()  # pylint: disable=not-callable
+    )
 
 
 def get_db():

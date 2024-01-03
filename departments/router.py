@@ -86,7 +86,7 @@ def send_join_request(
     return data.__dict__
 
 
-@router.get("/{department_id}/join-request")
+@router.get("/{department_id}/join-request", dependencies=[Depends(admin_middleware)])
 def get_join_request(department_id: str, db: Session = Depends(get_db)):
     data = dependencies.get_join_requests(db, department_id)
     return data
@@ -98,13 +98,13 @@ def get_department_information(department_id: str, db: Session = Depends(get_db)
     return data
 
 
-@router.get("/{department_id}/members")
+@router.get("/{department_id}/members", dependencies=[Depends(admin_middleware)])
 def get_department_members(department_id: str, db: Session = Depends(get_db)):
     data = dependencies.get_department_members(db, department_id)
     return data
 
 
-@router.put("/{department_id}/admin")
+@router.put("/{department_id}/admin", dependencies=[Depends(admin_middleware)])
 def update_member_admin(
     user_id: Annotated[str, Form()],
     is_admin: Annotated[bool, Form()],
@@ -118,7 +118,8 @@ def update_member_admin(
 
 
 @router.put(
-    "/join-request/approve/{request_id}", dependencies=[Depends(admin_middleware)]
+    "/join-request/{department_id}/approve/{request_id}",
+    dependencies=[Depends(admin_middleware)],
 )
 async def approve_join_request(
     request_id: str,

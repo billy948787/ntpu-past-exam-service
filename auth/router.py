@@ -242,7 +242,7 @@ def refresh(request: Request, db: Session = Depends(get_db)):
     try:
         payload = get_access_token_payload(request)
         user_id: str = payload.get("id")
-        adm: str = payload.get("adm")
+        department_admin_ids = users_dependencies.get_user_department_admin_ids(db, user_id)
         user = users_dependencies.get_user(db, user_id)
         access_token = create_access_token(
             data={
@@ -250,7 +250,7 @@ def refresh(request: Request, db: Session = Depends(get_db)):
                 "type": "access",
                 "isu": user.is_super_user,
                 "id": user.id,
-                "adm": adm,
+                "adm": json.dumps(department_admin_ids),
             },
         )
         refresh_token = create_access_token(
@@ -259,7 +259,7 @@ def refresh(request: Request, db: Session = Depends(get_db)):
                 "type": "refresh",
                 "isu": user.is_super_user,
                 "id": user.id,
-                "adm": adm,
+                "adm": json.dumps(department_admin_ids),
             },
             expires_delta=365,
         )

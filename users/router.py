@@ -53,6 +53,25 @@ def read_user_admin_scopes(request: Request, db: Session = Depends(get_db)):
     return scopes
 
 
+@router.put("/update/me")
+def update_user_info(
+    school_id: Annotated[str, Form()],
+    major: Annotated[str, Form()],
+    db: Session = Depends(get_db),
+):
+    user = dependencies.get_user_by_username(db, school_id)
+    dependencies.update_user(
+        db,
+        {
+            "username": user.username,
+            "readable_name": user.readable_name,
+            "school_department": major,
+            "email": user.email,
+        },
+    )
+    return {"status": "success"}
+
+
 @router.put("/status/{user_id}", dependencies=[Depends(admin_middleware)])
 def update_user_active_status(
     is_active: Annotated[bool, Form()], user_id: str, db: Session = Depends(get_db)

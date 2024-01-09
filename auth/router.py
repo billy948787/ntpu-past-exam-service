@@ -108,21 +108,25 @@ def login_with_google(
     school_id = str(user_data_from_google["email"])[1:10]
     user = users_dependencies.get_user_by_username(db, school_id)
 
-    user_dict = {
-        "username": school_id,
-        "readable_name": user_data_from_google["name"],
-        "school_department": " ",
-        "email": user_data_from_google["email"],
-    }
     if not user:
         user = users_dependencies.create_user(
             db,
-            user_dict,
+            {
+                "username": school_id,
+                "readable_name": user_data_from_google["name"],
+                "school_department": " ",
+                "email": user_data_from_google["email"],
+            },
         )
     else:
         users_dependencies.update_user(
             db,
-            user_dict,
+            {
+                "username": school_id,
+                "readable_name": user_data_from_google["name"],
+                "school_department": user.school_department,
+                "email": user_data_from_google["email"],
+            },
         )
 
     department_admin_ids = users_dependencies.get_user_department_admin_ids(db, user.id)
@@ -242,7 +246,9 @@ def refresh(request: Request, db: Session = Depends(get_db)):
     try:
         payload = get_access_token_payload(request)
         user_id: str = payload.get("id")
-        department_admin_ids = users_dependencies.get_user_department_admin_ids(db, user_id)
+        department_admin_ids = users_dependencies.get_user_department_admin_ids(
+            db, user_id
+        )
         user = users_dependencies.get_user(db, user_id)
         access_token = create_access_token(
             data={

@@ -56,6 +56,7 @@ async def create_post(
     db: Session = Depends(get_db),
     content: Annotated[str, Form()] = "",
     is_migrate: Annotated[bool, Form()] = False,
+    is_anonymous: Annotated[bool, Form()] = False,
 ):
     payload = get_access_token_payload(request)
     user_id = payload.get("id")
@@ -68,6 +69,7 @@ async def create_post(
         "content": content,
         "course_id": course_id,
         "is_migrate": is_migrate,
+        "is_anonymous": is_anonymous,
         "department_id": department_id,
     }
     post = dependencies.make_post(db, post, user_id, file_array)

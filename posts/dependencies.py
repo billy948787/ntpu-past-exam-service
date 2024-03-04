@@ -80,7 +80,8 @@ def get_post(db: Session, post_id: str):
     data = {
         **post.__dict__,
         "files": [],
-        "owner_name": user.readable_name if user.readable_name else user.username,
+        "owner_name": '匿名用戶' if post.is_anonymous else user.readable_name if user.readable_name else user.username,
+        "owner_id": 'anonymous' if post.is_anonymous else post.owner_id
     }
 
     for file in query_file_result:

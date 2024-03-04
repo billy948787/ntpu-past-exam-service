@@ -33,6 +33,7 @@ def get_single_post(course_id: str, db: Session = Depends(get_db)):
             post = post.__dict__
             if post["status"] == "APPROVED":
                 del post["status"]
+                del post["owner_id"]
                 formatted_data["posts"].append(post)
         except KeyError:
             pass

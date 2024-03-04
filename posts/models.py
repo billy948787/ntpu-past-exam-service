@@ -11,6 +11,7 @@ class Post(Base, BaseColumn):
     owner_id = Column(String(256), index=True)
     course_id = Column(String(256), index=True)
     is_migrate = Column(Boolean, default=False)
+    is_anonymous = Column(Boolean, default=False)
     status = Column(String(256), index=True, default="PENDING")
     department_id = Column(String(256), index=True)
 

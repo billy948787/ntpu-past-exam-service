@@ -58,6 +58,7 @@ def get_posts(
         data = {
             **post.__dict__,
             "course_name": course.name,
+            "owner_id": 'anonymous' if post.is_anonymous else post.owner_id
         }
         posts.append(data)
     return posts

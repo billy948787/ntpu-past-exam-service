@@ -75,7 +75,7 @@ async def create_post(
     return {"status": "success", "post_id": post.id}
 
 
-@router.put("/status/{post_id}", dependencies=[Depends(admin_middleware)])
+@router.put("/status/{department_id}/{post_id}", dependencies=[Depends(admin_middleware)])
 def update_post_status(
     status: Annotated[str, Form()], post_id: str, db: Session = Depends(get_db)
 ):

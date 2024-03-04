@@ -72,7 +72,7 @@ def update_user_info(
     return {"status": "success"}
 
 
-@router.put("/status/{user_id}", dependencies=[Depends(admin_middleware)])
+@router.put("/status/{department_id}/{user_id}", dependencies=[Depends(admin_middleware)])
 def update_user_active_status(
     is_active: Annotated[bool, Form()], user_id: str, db: Session = Depends(get_db)
 ):
@@ -80,7 +80,7 @@ def update_user_active_status(
     return {"status": "success"}
 
 
-@router.put("/admin/{user_id}", dependencies=[Depends(admin_middleware)])
+@router.put("/admin/{department_id}/{user_id}", dependencies=[Depends(admin_middleware)])
 def update_user_admin_status(
     is_admin: Annotated[bool, Form()], user_id: str, db: Session = Depends(get_db)
 ):

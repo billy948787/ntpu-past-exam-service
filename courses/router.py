@@ -39,11 +39,11 @@ def get_single_post(course_id: str, db: Session = Depends(get_db)):
     return formatted_data
 
 
-@router.post("", dependencies=[Depends(admin_middleware)])
+@router.post("/{department_id}", dependencies=[Depends(admin_middleware)])
 async def create_course(
     name: Annotated[str, Form()],
     category: Annotated[str, Form()],
-    department_id: Annotated[str, Form()],
+    department_id: str,
     db: Session = Depends(get_db),
 ):
     course = {"name": name, "category": category, "department_id": department_id}

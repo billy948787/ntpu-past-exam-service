@@ -145,3 +145,10 @@ app.include_router(auth_router, tags=["Auth"])
 @app.get("/ping", tags=["Health Check"])
 def heartbeat():
     return "pong"
+
+
+@app.get("/system-version", tags=["Health Check"])
+def get_system_version():
+    return {
+        "GIT_SHA": os.getenv("COMMIT_SHA")
+    }

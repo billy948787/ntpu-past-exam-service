@@ -274,6 +274,7 @@ def get_join_requests(db: Session, department_id: str):
             User.username,
             User.readable_name,
             User.school_department,
+            User.note,
         )
         .filter(
             (UserDepartment.department_id == department_id)
@@ -292,6 +293,7 @@ def get_join_requests(db: Session, department_id: str):
         username,
         readable_name,
         school_department,
+        note,
     ) in requests:
         result.append(
             {
@@ -301,6 +303,7 @@ def get_join_requests(db: Session, department_id: str):
                 "username": username,
                 "readable_name": readable_name,
                 "school_department": school_department,
+                "note": note,
                 "id": request_id,
             }
         )

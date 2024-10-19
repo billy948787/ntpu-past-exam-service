@@ -120,6 +120,7 @@ def update_user(db: Session, user: schemas.UserCreate):
                 "readable_name": user["readable_name"],
                 "school_department": user["school_department"],
                 "email": user["email"],
+                "note": user["note"],
             }
         )
         db.commit()

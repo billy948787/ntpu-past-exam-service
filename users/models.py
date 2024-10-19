@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, String
+from sqlalchemy import Boolean, Column, String, Text
 
 from sql.database import Base, BaseColumn
 
@@ -9,6 +9,7 @@ class User(Base, BaseColumn):
     email = Column(String(256))
     username = Column(String(256), unique=True)
     readable_name = Column(String(256), nullable=True, default=None)
+    note = Column(Text(), nullable=True, default=None)
     hashed_password = Column(String(256), nullable=True)
     school_department = Column(String(256))
     is_super_user = Column(Boolean, default=False)

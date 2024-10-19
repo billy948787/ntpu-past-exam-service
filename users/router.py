@@ -57,6 +57,7 @@ def read_user_admin_scopes(request: Request, db: Session = Depends(get_db)):
 def update_user_info(
     school_id: Annotated[str, Form()],
     major: Annotated[str, Form()],
+    note: Annotated[str, Form()],
     db: Session = Depends(get_db),
 ):
     user = dependencies.get_user_by_username(db, school_id)
@@ -67,6 +68,7 @@ def update_user_info(
             "readable_name": user.readable_name,
             "school_department": major,
             "email": user.email,
+            "note": note,
         },
     )
     return {"status": "success"}

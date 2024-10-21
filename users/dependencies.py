@@ -112,26 +112,14 @@ def create_user(db: Session, user: schemas.UserCreate):
 
 
 def update_user(db: Session, user: schemas.UserCreate):
-    try:
-        db.query(models.User).filter(models.User.username == user["username"]).update(
-            {
-                "username": user["username"],
-                "hashed_password": user["hashed_password"],
-                "readable_name": user["readable_name"],
-                "school_department": user["school_department"],
-                "email": user["email"],
-                "note": user["note"],
-            }
-        )
-        db.commit()
-    except KeyError:
-        db.query(models.User).filter(models.User.username == user["username"]).update(
-            {
-                "username": user["username"],
-                "readable_name": user["readable_name"],
-                "school_department": user["school_department"],
-                "email": user["email"],
-                "note": user["note"],
-            }
-        )
-        db.commit()
+    db.query(models.User).filter(models.User.username == user["username"]).update(
+        {
+            "username": user.get('username'),
+            "hashed_password": user.get('hashed_password'),
+            "readable_name": user.get('readable_name'),
+            "school_department": user.get('school_department'),
+            "email": user.get('email'),
+            "note": user.get('note'),
+        }
+    )
+    db.commit()

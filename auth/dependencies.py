@@ -58,7 +58,7 @@ def exchange_token_with_google(code: str, redirect_uri: str):
             "https://oauth2.googleapis.com/token",
             data={
                 "client_id": os.getenv("GOOGLE_SERVICE_CLIENT_ID"),
-                "client_secret": os.getenv("GOOGLE_SERVICE_SERCET"),
+                "client_secret": os.getenv("GOOGLE_SERVICE_SECRET"),
                 "code": code,
                 "redirect_uri": redirect_uri,
                 "grant_type": "authorization_code",

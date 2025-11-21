@@ -29,7 +29,8 @@ class BaseColumn(object):  # pylint: disable=useless-object-inheritance
         server_default=func.now(),  # pylint: disable=not-callable
     )
     updated_time = Column(
-        DateTime(timezone=True), onupdate=func.now()  # pylint: disable=not-callable
+        DateTime(timezone=True),
+        onupdate=func.now(),  # pylint: disable=not-callable
     )
 
 

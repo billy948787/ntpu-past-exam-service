@@ -33,7 +33,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
-    docs_url=None,
+    docs_url="/docs",
     redoc_url=None,
 )
 
@@ -149,6 +149,4 @@ def heartbeat():
 
 @app.get("/system-version", tags=["Health Check"])
 def get_system_version():
-    return {
-        "GIT_SHA": os.getenv("COMMIT_SHA")
-    }
+    return {"GIT_SHA": os.getenv("COMMIT_SHA")}

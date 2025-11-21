@@ -1,25 +1,16 @@
-FROM python:3.11-buster as builder
+FROM ghcr.io/astral-sh/uv:python3.11-bookworm-slim AS builder
 
-RUN pip install poetry==1.4.2
+WORKDIR /app
 
-ENV POETRY_NO_INTERACTION=1 \
-    POETRY_VIRTUALENVS_IN_PROJECT=1 \
-    POETRY_VIRTUALENVS_CREATE=1 \
-    POETRY_CACHE_DIR=/tmp/poetry_cache
+COPY pyproject.toml uv.lock ./
 
+RUN uv sync --frozen --no-dev --no-install-project
 
-COPY pyproject.toml poetry.lock ./
+FROM python:3.11-slim-bookworm AS runtime
 
-RUN --mount=type=cache,target=$POETRY_CACHE_DIR poetry install --without dev --no-root
+COPY --from=builder /app/.venv /app/.venv
 
-FROM python:3.11-slim-buster as runtime
-
-ENV VIRTUAL_ENV=/.venv \
-    PATH="/.venv/bin:$PATH"
-
-COPY --from=builder ${VIRTUAL_ENV} ${VIRTUAL_ENV}
-
-COPY . .
+ENV PATH="/app/.venv/bin:$PATH"
 
 EXPOSE 8080
 

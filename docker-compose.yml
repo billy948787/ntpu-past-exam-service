@@ -1,0 +1,70 @@
+services:
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+    volumes:
+      - .:/app
+      - app_venv:/app/.venv
+    command:
+      ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080", "--reload"]
+    working_dir: /app
+    environment:
+      - DATABASE_HOST=db
+      - DATABASE_USERNAME=${DATABASE_USERNAME}
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD}
+      - DATABASE=${DATABASE}
+      - DATABASE_PORT=3306
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD-}
+      - REDIS_CONNECTION_STRING=redis://:${REDIS_PASSWORD}@${REDIS_HOST}:${REDIS_PORT}
+      - R2_ACCESS_TOKEN=${R2_ACCESS_TOKEN}
+      - R2_ACCESS_KEY=${R2_ACCESS_KEY}
+      - R2_URL=${R2_URL}
+      - R2_BUCKET_NAME=${R2_BUCKET_NAME}
+      - R2_FILE_PATH=${R2_FILE_PATH}
+      - GOOGLE_SERVICE_SECRET=${GOOGLE_SERVICE_SECRET}
+      - GOOGLE_SERVICE_CLIENT_ID=${GOOGLE_SERVICE_CLIENT_ID}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+  db:
+    image: mysql:8.0.33
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DATABASE_PASSWORD}
+      MYSQL_DATABASE: ${DATABASE}
+      MYSQL_USER: ${DATABASE_USERNAME}
+      MYSQL_PASSWORD: ${DATABASE_PASSWORD}
+    volumes:
+      - sql_data:/var/lib/mysql
+    ports:
+      - "${DATABASE_PORT-}:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 30s
+    restart: unless-stopped
+  redis:
+    image: redis/redis-stack-server:latest
+    ports:
+      - "${REDIS_PORT}:6379"
+    volumes:
+      - redis_data:/data
+    environment:
+      - REDIS_ARGS=--requirepass ${REDIS_PASSWORD-}
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-}", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+volumes:
+  sql_data:
+  redis_data:
+  app_venv:

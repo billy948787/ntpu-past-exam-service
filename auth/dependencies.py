@@ -36,7 +36,9 @@ def get_lms_user_info(username: str, password: str):
     user_info_page = requests.get(user_info_link, cookies=cookies, timeout=10)
     user_info_soup = BeautifulSoup(user_info_page.text, "html.parser")
 
-    readable_name = user_info_soup.find(text="(選課說明：").parent.find_all("span")[3].text
+    readable_name = (
+        user_info_soup.find(text="(選課說明：").parent.find_all("span")[3].text
+    )
     department = user_info_soup.find(text="(選課說明：").parent.find_all("span")[1].text
 
     contact_link = f"https://cof.ntpu.edu.tw/pls/univer/query_all_course.judge?func=18&date1={timestamp}"
@@ -65,6 +67,8 @@ def exchange_token_with_google(code: str, redirect_uri: str):
             },
             timeout=10,
         )
+
+        print(response.text)
 
         data = json.loads(response.text)
         google_access_token = data["access_token"]

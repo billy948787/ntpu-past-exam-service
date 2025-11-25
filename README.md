@@ -46,11 +46,21 @@ GOOGLE_SERVICE_CLIENT_ID=
 You should get the value from the code owner. 2. Install dependancies:
 
 ```shell
-poetry install
+uv sync
+source .venv/bin/activate
 ```
 
 3. Start dev server
 
 ```shell
-poetry run uvicorn main:app --reload
+uvicorn main:app --reload
 ```
+
+## Start Dev server using Docker
+
+```shell
+docker-compose up --build
+```
+
+You will still need to create a `.env` file in the root folder as described above.
+But the database and redis server will be created automatically using docker-compose.

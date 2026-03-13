@@ -126,14 +126,24 @@ def delete_thread(
 
 @router.post("/{thread_id}/like")
 def like_thread(
+    request: Request,
     thread_id: str,
     db: Session = Depends(get_db),
 ):
-    """按讚討論串"""
-    thread = dependencies.like_thread(db, thread_id)
+    
+    paylaoad = get_access_token_payload(request)
+    user_id = paylaoad.get("id")
+
+    thread = dependencies.toggle_thread_like(
+        db,
+        thread_id,
+        user_id
+        )
+    
     if thread is None:
         raise HTTPException(status_code=404, detail="討論串不存在")
-    return {"status": "success", "like_count": thread.like_count}
+    
+    return thread
 
 
 # ============ 評論操作 ============
@@ -254,12 +264,20 @@ def delete_comment(
 
 
 @router.post("/comments/{comment_id}/like")
-def like_comment(
+async def comment_like(
+    request: Request,
     comment_id: str,
     db: Session = Depends(get_db),
 ):
-    """按讚評論"""
-    comment = dependencies.like_comment(db, comment_id)
+
+    payload = get_access_token_payload(request)
+    user_id = payload.get("id")
+
+    comment = dependencies.toggle_comment_like(
+        db,
+        comment_id,
+        user_id
+    )
     if comment is None:
         raise HTTPException(status_code=404, detail="評論不存在")
-    return {"status": "success", "like_count": comment.like_count}
+    return comment

@@ -1,7 +1,6 @@
-from sqlalchemy import Boolean, Column, Integer, String, Text
+from sqlalchemy import Boolean, Column, Integer, String, Text, func , UniqueConstraint
 
 from sql.database import Base, BaseColumn
-
 
 class Thread(Base, BaseColumn):
     __tablename__ = "threads"
@@ -14,7 +13,7 @@ class Thread(Base, BaseColumn):
     course_id = Column(String(256), index=True)
     is_anonymous = Column(Boolean, default=False)
     like_count = Column(Integer, default=0)
-
+    
 
 class ThreadComment(Base, BaseColumn):
     __tablename__ = "thread_comments"
@@ -26,3 +25,23 @@ class ThreadComment(Base, BaseColumn):
     owner_id = Column(String(256), index=True)
     is_anonymous = Column(Boolean, default=False)
     like_count = Column(Integer, default=0)
+    reply_to_user_id = Column(String(256), index=True, nullable=True)
+
+class ThreadLike(Base, BaseColumn):
+    __tablename__ = "thread_likes"
+    __table_args__ = (
+        UniqueConstraint("thread_id", "user_id", name="unique_thread_like"),
+    )
+    
+    thread_id = Column(String(256), index=True)
+    user_id = Column(String(256), index=True)
+
+class CommentLike(Base, BaseColumn):
+    __tablename__ = "comment_likes"
+    __table_args__ = (
+        UniqueConstraint("comment_id", "user_id", name="unique_comment_like"),
+    )
+    
+    comment_id = Column(String(256), index=True)
+    user_id = Column(String(256), index=True)
+    

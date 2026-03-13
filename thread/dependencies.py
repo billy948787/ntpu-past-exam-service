@@ -245,27 +245,73 @@ def _delete_comment_tree(db: Session, comment_id: str):
         db.delete(db_comment)
 
 
-def like_thread(db: Session, thread_id: str):
-    """按讚討論串"""
-    db_thread = db.query(models.Thread).filter(models.Thread.id == thread_id).first()
+def toggle_thread_like(db: Session, thread_id: str, user_id: str):
+
+    db_thread = db.query(models.Thread).filter(
+        models.Thread.id == thread_id
+    ).first()
+
     if db_thread is None:
         return None
-    
-    db_thread.like_count += 1
+
+    like = db.query(models.ThreadLike).filter(
+        models.ThreadLike.thread_id == thread_id,
+        models.ThreadLike.user_id == user_id
+    ).first()
+
+    if like:
+        db.delete(like)
+        db_thread.like_count -= 1
+        liked = False
+    else:
+        new_like = models.ThreadLike(
+            thread_id=thread_id,
+            user_id=user_id
+        )
+        db.add(new_like)
+        db_thread.like_count += 1
+        liked = True
+
     db.commit()
     db.refresh(db_thread)
-    return db_thread
 
+    return {
+        "thread": db_thread,
+        "liked": liked
+    }
 
-def like_comment(db: Session, comment_id: str):
-    """按讚評論"""
-    db_comment = (
-        db.query(models.ThreadComment).filter(models.ThreadComment.id == comment_id).first()
-    )
+def toggle_comment_like(db: Session, comment_id: str, user_id: str):
+
+    db_comment = db.query(models.ThreadComment).filter(
+        models.ThreadComment.id == comment_id
+    ).first()
+
     if db_comment is None:
         return None
-    
-    db_comment.like_count += 1
+
+    like = db.query(models.CommentLike).filter(
+        models.CommentLike.comment_id == comment_id,
+        models.CommentLike.user_id == user_id
+    ).first()
+
+    if like:
+        db.delete(like)
+        db_comment.like_count -= 1
+        liked = False
+    else:
+        new_like = models.CommentLike(
+            comment_id=comment_id,
+            user_id=user_id
+        )
+        db.add(new_like)
+        db_comment.like_count += 1
+        liked = True
+
     db.commit()
     db.refresh(db_comment)
-    return db_comment
+
+    return {
+        "comment": db_comment,
+        "liked": liked
+    }
+

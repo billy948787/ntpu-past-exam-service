@@ -19,6 +19,7 @@ from bulletins.router import router as bulletins_router
 from courses.router import router as courses_router
 from departments.router import router as departments_router
 from posts.router import router as posts_router
+from thread.router import router as thread_router
 from sql import models
 from sql.database import engine
 from thread.router import router as thread_router
@@ -144,6 +145,7 @@ app.include_router(
     thread_router, 
     tags=["Threads"],
     dependencies=[Depends(auth_middleware), Depends(oauth2_scheme)]
+    
 )
 app.include_router(auth_router, tags=["Auth"])
 

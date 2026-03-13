@@ -42,6 +42,8 @@ class ThreadCommentBase(BaseModel):
 
 class ThreadCommentCreate(ThreadCommentBase):
     parent_comment_id: Optional[str] = None
+    # when replying to a specific user, record their user ID
+    reply_to_user_id: Optional[str] = None
 
 
 class ThreadCommentUpdate(BaseModel):
@@ -52,6 +54,7 @@ class ThreadComment(ThreadCommentBase):
     id: str
     thread_id: str
     parent_comment_id: Optional[str] = None
+    reply_to_user_id: Optional[str] = None
     owner_id: str
     owner_name: str
     like_count: int
@@ -65,3 +68,13 @@ class ThreadComment(ThreadCommentBase):
 class ThreadCommentDetail(ThreadComment):
     """包含回覆列表的評論詳情"""
     replies: Optional[list["ThreadComment"]] = None
+
+
+class ThreadLikeResponse(BaseModel):
+    thread: Thread
+    liked: bool
+
+
+class CommentLikeResponse(BaseModel):
+    comment: ThreadComment
+    liked: bool

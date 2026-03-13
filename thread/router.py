@@ -124,7 +124,7 @@ def delete_thread(
     raise HTTPException(status_code=404, detail="討論串不存在")
 
 
-@router.post("/{thread_id}/like")
+@router.post("/{thread_id}/like", response_model=schemas.ThreadLikeResponse)
 def like_thread(
     request: Request,
     thread_id: str,
@@ -154,6 +154,7 @@ def create_comment(
     content: Annotated[str, Form()],
     is_anonymous: Annotated[bool, Form()] = False,
     parent_comment_id: Annotated[Optional[str], Form()] = None,
+    reply_to_user_id: Annotated[Optional[str], Form()] = None,
     request: Request = None,
     db: Session = Depends(get_db),
 ):
@@ -182,6 +183,9 @@ def create_comment(
         "content": content,
         "is_anonymous": is_anonymous,
     }
+    if reply_to_user_id:
+        comment_data["reply_to_user_id"] = reply_to_user_id
+
     comment = dependencies.create_comment(db, thread_id, comment_data, user_id, parent_comment_id)
     return {"status": "success", "comment_id": comment.id}
 
@@ -263,7 +267,7 @@ def delete_comment(
     raise HTTPException(status_code=404, detail="評論不存在")
 
 
-@router.post("/comments/{comment_id}/like")
+@router.post("/comments/{comment_id}/like", response_model=schemas.CommentLikeResponse)
 async def comment_like(
     request: Request,
     comment_id: str,

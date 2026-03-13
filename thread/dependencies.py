@@ -186,7 +186,7 @@ def _build_reply_tree(db: Session, parent_id: str, replies_list: List):
 def create_comment(
     db: Session, thread_id: str, comment_data: Dict, user_id: str, parent_comment_id: Optional[str] = None
 ):
-    """建立新評論或回覆"""
+    """建立新評論或回覆。comment_data 內可以包含 reply_to_user_id"""
     db_comment = models.ThreadComment(
         thread_id=thread_id,
         parent_comment_id=parent_comment_id,

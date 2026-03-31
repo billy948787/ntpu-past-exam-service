@@ -1,5 +1,5 @@
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from dotenv import load_dotenv
@@ -23,7 +23,7 @@ def get_access_token_payload(request: Request, options=None):
 
 def create_access_token(data: dict, expires_delta: Optional[int] = 1):
     to_encode = data.copy()
-    expire = datetime.utcnow() + timedelta(days=expires_delta)
+    expire = datetime.now(timezone.utc) + timedelta(days=expires_delta)
 
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)

@@ -54,6 +54,8 @@ def get_departments(db: Session):
 
 def get_viewable_departments(db: Session, user_id: str):
     user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=401, detail="User not found")
     if user.is_super_user:
         return db.query(models.Department).all()
     sub_query = db.query(UserDepartment.department_id).filter(

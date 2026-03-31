@@ -7,26 +7,25 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.9"
-fastapi = "^0.104.1"
-uvicorn = {extras = ["standard"], version = "^0.24.0.post1"}
-pylint = "^3.0.2"
-black = "^23.11.0"
-pre-commit = "^3.5.0"
-isort = "^5.12.0"
-poetry-plugin-export = "^1.6.0"
-sqlalchemy = "^2.0.23"
+fastapi = "^0.115.0"
+uvicorn = {extras = ["standard"], version = "^0.34.0"}
+pylint = "^3.3.0"
+black = "^25.1.0"
+pre-commit = "^4.0.0"
+isort = "^6.0.0"
+poetry-plugin-export = "^1.8.0"
+sqlalchemy = "^2.0.36"
 load-dotenv = "^0.1.0"
-mysql-connector-python = "^8.2.0"
-alembic = "^1.12.1"
-boto3 = "^1.29.6"
-urllib3 = ">=1.25.4,<1.27"
-passlib = {extras = ["bcrypt"], version = "^1.7.4"}
-python-multipart = "^0.0.6"
+mysql-connector-python = "^9.1.0"
+alembic = "^1.14.0"
+boto3 = "^1.36.0"
+bcrypt = "^4.2.0"
+python-multipart = "^0.0.20"
 python-jose = "^3.3.0"
-beautifulsoup4 = "^4.12.2"
-logtail-python = "^0.2.7"
-gunicorn = "^21.2.0"
-fastapi-cache2 = {extras = ["redis"], version = "^0.2.1"}
+beautifulsoup4 = "^4.13.0"
+logtail-python = "^0.3.0"
+gunicorn = "^23.0.0"
+fastapi-cache2 = {extras = ["redis"], version = "^0.2.2"}
 
 
 [build-system]

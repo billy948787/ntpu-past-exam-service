@@ -1,5 +1,6 @@
 import os
 import pickle
+from contextlib import asynccontextmanager
 from typing import Any
 
 from dotenv import load_dotenv
@@ -31,11 +32,6 @@ from utils.log import log_request_middleware
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
 models.Base.metadata.create_all(bind=engine)
-
-app = FastAPI(
-    docs_url=None,
-    redoc_url=None,
-)
 
 load_dotenv()
 
@@ -76,8 +72,8 @@ class ORMJsonCoder(Coder):
         return pickle.loads(value)
 
 
-@app.on_event("startup")
-async def startup():
+@asynccontextmanager
+async def lifespan(app: FastAPI):
     redis = aioredis.Redis(
         host=os.getenv("REDIS_HOST"),
         password=os.getenv("REDIS_PASSWORD"),
@@ -89,7 +85,14 @@ async def startup():
         key_builder=request_key_builder,
         coder=ORMJsonCoder,
     )
+    yield
 
+
+app = FastAPI(
+    docs_url=None,
+    redoc_url=None,
+    lifespan=lifespan,
+)
 
 app.middleware("http")(log_request_middleware)
 app.add_exception_handler(RequestValidationError, request_validation_exception_handler)

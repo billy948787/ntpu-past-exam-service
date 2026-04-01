@@ -1,3 +1,4 @@
+from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from departments.models import Department
@@ -26,6 +27,8 @@ def update_user_admin(db: Session, user_id: str, is_admin: bool):
 
 def get_user_department_admin_ids(db: Session, user_id: str):
     user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=401, detail="User not found")
     is_admin_departments = []
     if user.is_super_user:
         for department in db.query(Department).all():
@@ -47,6 +50,8 @@ def get_user_department_admin_ids(db: Session, user_id: str):
 
 def get_user_department_admin(db: Session, user_id: str):
     user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=401, detail="User not found")
     if user.is_super_user:
         return db.query(Department).all()
     sub_query = db.query(models.UserDepartment.department_id).filter(

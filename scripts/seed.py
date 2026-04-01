@@ -12,8 +12,6 @@ import uuid
 # Ensure project root is in path when running as `python scripts/seed.py`
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-import hashlib
-
 from sqlalchemy.orm import Session
 
 from bulletins.models import Bulletin
@@ -26,23 +24,8 @@ from users.models import User, UserDepartment
 
 
 def hash_password(password: str) -> str:
-    """Hash password using passlib bcrypt."""
-    import io
-    import logging
-
-    logging.getLogger("passlib").setLevel(logging.ERROR)
-
-    from passlib.context import CryptContext
-
-    # Suppress passlib's stderr warning about bcrypt 4.x missing __about__
-    _stderr = sys.stderr
-    sys.stderr = io.StringIO()
-    try:
-        pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-        result = pwd_context.hash(password)
-    finally:
-        sys.stderr = _stderr
-    return result
+    import bcrypt
+    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
 
 def generate_uuid():

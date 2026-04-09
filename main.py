@@ -1,8 +1,11 @@
+import json
 import os
 import pickle
 from contextlib import asynccontextmanager
+from datetime import datetime
 from typing import Any
 
+from alembic.config import Config
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, Request, Response
 from fastapi.exception_handlers import http_exception_handler
@@ -14,14 +17,14 @@ from fastapi_cache.backends.redis import RedisBackend
 from redis import asyncio as aioredis
 from starlette.exceptions import HTTPException
 
+from alembic import command
 from auth.router import auth_middleware
 from auth.router import router as auth_router
 from bulletins.router import router as bulletins_router
 from courses.router import router as courses_router
 from departments.router import router as departments_router
 from posts.router import router as posts_router
-from sql import models
-from sql.database import engine
+from thread.router import router as thread_router
 from users.router import router as users_router
 from utils.exception_handlers import (
     request_validation_exception_handler,
@@ -30,8 +33,6 @@ from utils.exception_handlers import (
 from utils.log import log_request_middleware
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
-
-models.Base.metadata.create_all(bind=engine)
 
 load_dotenv()
 
@@ -60,20 +61,35 @@ def request_key_builder(
     )
 
 
+def _json_default(obj: Any) -> Any:
+    if isinstance(obj, datetime):
+        return obj.isoformat()
+    return str(obj)
+
+
 class ORMJsonCoder(Coder):
     @classmethod
     def encode(cls, value: Any) -> bytes:
-        return pickle.dumps(
-            value,
-        )
+        return json.dumps(value, default=_json_default).encode()
 
     @classmethod
     def decode(cls, value: bytes) -> Any:
-        return pickle.loads(value)
+        try:
+            return json.loads(value)
+        except (json.JSONDecodeError, UnicodeDecodeError):
+            # nosec - legacy pickle cache entries from before JSON coder migration.
+            # Remove this fallback once all pickle entries have expired (cache TTL ≤ 365 days).
+            try:
+                return pickle.loads(value)  # nosec
+            except Exception:
+                return None
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    alembic_cfg = Config("alembic.ini")
+    command.upgrade(alembic_cfg, "head")
+
     redis = aioredis.Redis(
         host=os.getenv("REDIS_HOST"),
         password=os.getenv("REDIS_PASSWORD"),
@@ -142,6 +158,10 @@ app.include_router(
     tags=["Bulletins"],
     dependencies=[Depends(auth_middleware), Depends(oauth2_scheme)],
 )
+app.include_router(
+    thread_router,
+    tags=["Threads"],
+)
 app.include_router(auth_router, tags=["Auth"])
 
 
@@ -152,6 +172,4 @@ def heartbeat():
 
 @app.get("/system-version", tags=["Health Check"])
 def get_system_version():
-    return {
-        "GIT_SHA": os.getenv("COMMIT_SHA")
-    }
+    return {"GIT_SHA": os.getenv("COMMIT_SHA")}

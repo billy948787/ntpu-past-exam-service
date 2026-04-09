@@ -1,12 +1,12 @@
 import json
 from typing import Annotated, Optional
 
+import bcrypt
 from dotenv import load_dotenv
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi_cache.decorator import cache
 from jose import ExpiredSignatureError, JWTError
-import bcrypt
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -57,10 +57,9 @@ async def admin_middleware(request: Request):
     department_id = request.path_params.get("department_id")
     payload = get_access_token_payload(request)
 
-    is_super_user: bool = payload.get("isu")
-    print(is_super_user)
     if payload is None:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+    is_super_user: bool = payload.get("isu")
     admin_ids: str = payload.get("adm")
 
     if admin_ids is None:
@@ -90,7 +89,9 @@ def get_password_hash(password):
 
 
 def verify_password(plain_password, hashed_password):
-    return bcrypt.checkpw(plain_password.encode("utf-8"), hashed_password.encode("utf-8"))
+    return bcrypt.checkpw(
+        plain_password.encode("utf-8"), hashed_password.encode("utf-8")
+    )
 
 
 @router.post("/exchange")
@@ -183,6 +184,10 @@ def login(
                 user_dict,
             )
     except ValueError:
+        if not user or not user.hashed_password:
+            raise HTTPException(
+                status_code=400, detail="incorrect username or password"
+            )
         if not verify_password(form_data.password, user.hashed_password):
             raise HTTPException(
                 status_code=400, detail="incorrect username or password"
@@ -241,7 +246,7 @@ def verify(request: Request, db: Session = Depends(get_db)):
 @router.post("/refresh")
 def refresh(request: Request, db: Session = Depends(get_db)):
     try:
-        payload = get_access_token_payload(request)
+        payload = get_access_token_payload(request, token_type="refresh")
         user_id: str = payload.get("id")
         department_admin_ids = users_dependencies.get_user_department_admin_ids(
             db, user_id
@@ -299,10 +304,24 @@ def create_user(
         },
     )
 
-    access_token = create_access_token(data={"sub": user.username, "id": user.id})
+    access_token = create_access_token(
+        data={
+            "sub": user.username,
+            "type": "access",
+            "isu": False,
+            "id": user.id,
+            "adm": "[]",
+        }
+    )
 
     refresh_token = create_access_token(
-        data={"sub": user.username, "type": "refresh"},
+        data={
+            "sub": user.username,
+            "type": "refresh",
+            "isu": False,
+            "id": user.id,
+            "adm": "[]",
+        },
         expires_delta=365,
     )
 

@@ -12,11 +12,13 @@ load_dotenv()
 LOG_TAIL_SOURCE_KEY = os.getenv("LOG_TAIL_SOURCE_KEY")
 SERVICE_NAME = os.getenv("SERVICE_NAME") or "local"
 
-handler = LogtailHandler(source_token=LOG_TAIL_SOURCE_KEY)
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 logger.handlers = []
-logger.addHandler(handler)
+if LOG_TAIL_SOURCE_KEY:
+    logger.addHandler(LogtailHandler(source_token=LOG_TAIL_SOURCE_KEY))
+else:
+    logger.addHandler(logging.StreamHandler())
 
 
 async def log_request_middleware(request, call_next):

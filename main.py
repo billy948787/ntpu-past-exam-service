@@ -6,7 +6,6 @@ from contextlib import asynccontextmanager
 from datetime import datetime
 from typing import Any, Callable, Dict, Optional, Tuple
 
-from alembic.config import Config
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, Request, Response
 from fastapi.exception_handlers import http_exception_handler
@@ -20,7 +19,6 @@ from redis import asyncio as aioredis
 from sqlalchemy.orm import Session
 from starlette.exceptions import HTTPException
 
-from alembic import command
 from auth.router import auth_middleware
 from auth.router import router as auth_router
 from bulletins.router import router as bulletins_router
@@ -129,9 +127,6 @@ class ORMJsonCoder(Coder):
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    alembic_cfg = Config("alembic.ini")
-    command.upgrade(alembic_cfg, "head")
-
     redis = aioredis.Redis(
         host=os.getenv("REDIS_HOST"),
         password=os.getenv("REDIS_PASSWORD"),

@@ -2,16 +2,25 @@ import os
 import uuid
 
 from dotenv import load_dotenv
-from sqlalchemy import Column, DateTime, String, create_engine, func
+from sqlalchemy import URL, Column, DateTime, String, create_engine, func
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 load_dotenv()
 
 
-# pylint: disable-next=line-too-long
-SQLALCHEMY_DATABASE_URL = f"mysql+mysqlconnector://{os.getenv('DATABASE_USERNAME')}:{os.getenv('DATABASE_PASSWORD')}@{os.getenv('DATABASE_HOST')}:{os.getenv('DATABASE_PORT')}/{os.getenv('DATABASE')}"
+SQLALCHEMY_DATABASE_URL = URL.create(
+    drivername=os.getenv("DATABASE_DRIVER", "mysql+mysqlconnector"),
+    username=os.getenv("DATABASE_USERNAME"),
+    password=os.getenv("DATABASE_PASSWORD"),
+    host=os.getenv("DATABASE_HOST"),
+    port=int(os.getenv("DATABASE_PORT", "3306")),
+    database=os.getenv("DATABASE"),
+).render_as_string(hide_password=False)
 
-engine = create_engine(SQLALCHEMY_DATABASE_URL)
+engine = create_engine(
+    SQLALCHEMY_DATABASE_URL,
+    pool_pre_ping=True,
+)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()

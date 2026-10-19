@@ -1,0 +1,11 @@
+.env
+.claude
+.git
+.gitignore
+.idea
+.opencode
+.venv
+.vscode
+__pycache__
+*.pyc
+tests

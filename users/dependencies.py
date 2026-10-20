@@ -5,24 +5,6 @@ from departments.models import Department
 from . import models, schemas
 
 
-def update_user_status(db: Session, user_id: str, status: bool):
-    (
-        db.query(models.User)
-        .filter(models.User.id == user_id)
-        .update({"is_active": status})
-    )
-    db.commit()
-
-
-def update_user_admin(db: Session, user_id: str, is_admin: bool):
-    (
-        db.query(models.User)
-        .filter(models.User.id == user_id)
-        .update({"is_admin": is_admin})
-    )
-    db.commit()
-
-
 def get_user_department_admin_ids(db: Session, user_id: str):
     user = db.query(models.User).filter(models.User.id == user_id).first()
     if not user:
@@ -36,7 +18,8 @@ def get_user_department_admin_ids(db: Session, user_id: str):
         for record in (
             db.query(models.UserDepartment)
             .filter(
-                (models.UserDepartment.is_department_admin == True)
+                (models.UserDepartment.is_department_admin.is_(True))
+                & (models.UserDepartment.status == "APPROVED")
                 & (models.UserDepartment.user_id == user_id)
             )
             .all()
@@ -53,7 +36,8 @@ def get_user_department_admin(db: Session, user_id: str):
     if user.is_super_user:
         return db.query(Department).all()
     sub_query = db.query(models.UserDepartment.department_id).filter(
-        (models.UserDepartment.is_department_admin == True)
+        (models.UserDepartment.is_department_admin.is_(True))
+        & (models.UserDepartment.status == "APPROVED")
         & (models.UserDepartment.user_id == user_id)
         & (models.UserDepartment.department_id == Department.id)
     )
@@ -74,18 +58,49 @@ def get_user_by_username(db: Session, username: str):
     return db.query(models.User).filter(models.User.username == username).first()
 
 
-def get_users(db: Session, is_active: bool, skip: int = 0, limit: int = 100):
-    query_filter = []
+def get_users(db: Session, skip: int = 0, limit: int = 100):
+    return db.query(models.User).offset(skip).limit(limit).all()
 
-    if is_active is not None:
-        if is_active:
-            query_filter.append(models.User.is_active == True)
-        else:
-            query_filter.append(
-                (models.User.is_active == False) | (models.User.is_active == None)
+
+def can_view_user_details(db: Session, viewer_id: str, target_user_id: str) -> bool:
+    """Allow self, superusers, or an admin sharing a department with target.
+
+    Pending department memberships are intentionally included for the target so
+    an administrator can review the note attached to a join request.
+    """
+    if viewer_id == target_user_id:
+        return True
+
+    viewer = get_user(db, viewer_id)
+    if viewer is None:
+        return False
+    if viewer.is_super_user:
+        return True
+
+    admin_department_ids = [
+        row[0]
+        for row in (
+            db.query(models.UserDepartment.department_id)
+            .filter(
+                (models.UserDepartment.user_id == viewer_id)
+                & (models.UserDepartment.status == "APPROVED")
+                & (models.UserDepartment.is_department_admin.is_(True))
             )
+            .all()
+        )
+    ]
+    if not admin_department_ids:
+        return False
 
-    return db.query(models.User).filter(*query_filter).offset(skip).limit(limit).all()
+    return (
+        db.query(models.UserDepartment)
+        .filter(
+            (models.UserDepartment.user_id == target_user_id)
+            & (models.UserDepartment.department_id.in_(admin_department_ids))
+        )
+        .first()
+        is not None
+    )
 
 
 def get_user_preference(db: Session, user_id: str):
@@ -96,7 +111,9 @@ def get_user_preference(db: Session, user_id: str):
     )
 
 
-def update_user_preference(db: Session, user_id: str, show_empty_courses: bool, default_is_anonymous: bool):
+def update_user_preference(
+    db: Session, user_id: str, show_empty_courses: bool, default_is_anonymous: bool
+):
     pref = (
         db.query(models.UserPreference)
         .filter(models.UserPreference.user_id == user_id)
@@ -121,8 +138,10 @@ def create_user(db: Session, user: schemas.UserCreate):
     user_kwargs = {
         "username": user["username"],
         "readable_name": user["readable_name"],
-        "school_department": user["school_department"],
-        "email": user["email"],
+        # Local accounts created by a superuser do not have school profile data
+        # until the owner fills it in.
+        "school_department": user.get("school_department"),
+        "email": user.get("email"),
     }
     if user.get("hashed_password"):
         user_kwargs["hashed_password"] = user["hashed_password"]
@@ -140,13 +159,15 @@ def create_user(db: Session, user: schemas.UserCreate):
 
 def update_user(db: Session, user: schemas.UserCreate):
     update_data = {
-        "username": user.get('username'),
-        "readable_name": user.get('readable_name'),
-        "school_department": user.get('school_department'),
-        "email": user.get('email'),
-        "note": user.get('note'),
+        "username": user.get("username"),
+        "readable_name": user.get("readable_name"),
+        "school_department": user.get("school_department"),
+        "email": user.get("email"),
+        "note": user.get("note"),
     }
-    if user.get('hashed_password'):
-        update_data["hashed_password"] = user['hashed_password']
-    db.query(models.User).filter(models.User.username == user["username"]).update(update_data)
+    if user.get("hashed_password"):
+        update_data["hashed_password"] = user["hashed_password"]
+    db.query(models.User).filter(models.User.username == user["username"]).update(
+        update_data
+    )
     db.commit()

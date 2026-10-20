@@ -1,10 +1,10 @@
 from typing import Annotated, List, Optional
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
-from jose import JWTError
 from sqlalchemy.orm import Session
 
 from courses.models import Course
+from departments import dependencies as department_dependencies
 from sql.database import get_db
 from users.models import User, UserDepartment
 from utils.token import get_access_token_payload
@@ -60,6 +60,58 @@ def _normalize_pagination(skip: int, limit: int):
     return normalized_skip, normalized_limit
 
 
+def _get_current_user(db: Session, request: Request) -> User:
+    if request is None:
+        raise HTTPException(status_code=401, detail="Authentication required")
+
+    payload = get_access_token_payload(request)
+    user_id = payload.get("id")
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Invalid token: missing user id")
+
+    user = db.query(User).filter(User.id == user_id).first()
+    if user is None:
+        raise HTTPException(status_code=401, detail="User not found")
+    return user
+
+
+def _require_visible_course(db: Session, user: User, course_id: str) -> Course:
+    course = db.query(Course).filter(Course.id == course_id).first()
+    if course is None:
+        raise HTTPException(status_code=404, detail="Course not found")
+
+    department_dependencies.require_viewable_department(
+        db, user_id=user.id, department_id=course.department_id
+    )
+    return course
+
+
+def _require_visible_thread(db: Session, user: User, thread_id: str):
+    thread = (
+        db.query(dependencies.models.Thread)
+        .filter(dependencies.models.Thread.id == thread_id)
+        .first()
+    )
+    if thread is None:
+        raise HTTPException(status_code=404, detail="Thread not found")
+
+    _require_visible_course(db, user, thread.course_id)
+    return thread
+
+
+def _require_visible_comment(db: Session, user: User, comment_id: str):
+    comment = (
+        db.query(dependencies.models.ThreadComment)
+        .filter(dependencies.models.ThreadComment.id == comment_id)
+        .first()
+    )
+    if comment is None:
+        raise HTTPException(status_code=404, detail="Comment not found")
+
+    thread = _require_visible_thread(db, user, comment.thread_id)
+    return comment, thread
+
+
 @router.post("/{course_id}", response_model=ThreadCreateResponse)
 async def create_thread(
     course_id: str,
@@ -70,25 +122,22 @@ async def create_thread(
     request: Request = None,
     db: Session = Depends(get_db),
 ):
-    payload = get_access_token_payload(request)
-    user_id = payload.get("id")
-    if not user_id:
-        raise HTTPException(status_code=401, detail="Invalid token: missing user id")
-
-    course = db.query(Course).filter(Course.id == course_id).first()
-    if course is None:
-        raise HTTPException(status_code=404, detail="Course not found")
+    user = _get_current_user(db, request)
+    _require_visible_course(db, user, course_id)
 
     image_data = None
     if image is not None:
-        if image.content_type not in ALLOWED_THREAD_IMAGE_TYPES:
-            raise HTTPException(status_code=400, detail="Unsupported image type")
+        try:
+            if image.content_type not in ALLOWED_THREAD_IMAGE_TYPES:
+                raise HTTPException(status_code=400, detail="Unsupported image type")
 
-        image_data = await image.read(MAX_THREAD_IMAGE_SIZE_BYTES + 1)
-        if len(image_data) > MAX_THREAD_IMAGE_SIZE_BYTES:
-            raise HTTPException(status_code=413, detail="Image too large")
-        if not _validate_image_magic(image_data):
-            raise HTTPException(status_code=400, detail="Invalid image content")
+            image_data = await image.read(MAX_THREAD_IMAGE_SIZE_BYTES + 1)
+            if len(image_data) > MAX_THREAD_IMAGE_SIZE_BYTES:
+                raise HTTPException(status_code=413, detail="Image too large")
+            if not _validate_image_magic(image_data):
+                raise HTTPException(status_code=400, detail="Invalid image content")
+        finally:
+            await image.close()
 
     thread_data = {
         "title": title,
@@ -96,7 +145,7 @@ async def create_thread(
         "course_id": course_id,
         "is_anonymous": is_anonymous,
     }
-    thread = dependencies.create_thread(db, thread_data, user_id, image_data)
+    thread = dependencies.create_thread(db, thread_data, user.id, image_data)
     return {"status": "success", "thread_id": thread.id}
 
 
@@ -109,14 +158,9 @@ def get_threads(
     db: Session = Depends(get_db),
 ):
     skip, limit = _normalize_pagination(skip, limit)
-
-    user_id = None
-    try:
-        payload = get_access_token_payload(request)
-        user_id = payload.get("id")
-    except (JWTError, HTTPException, KeyError, AttributeError):
-        pass
-    threads, total = dependencies.get_threads(db, course_id, skip, limit, user_id)
+    user = _get_current_user(db, request)
+    _require_visible_course(db, user, course_id)
+    threads, total = dependencies.get_threads(db, course_id, skip, limit, user.id)
     return {"threads": threads, "total": total}
 
 
@@ -126,13 +170,9 @@ def get_thread_detail(
     request: Request = None,
     db: Session = Depends(get_db),
 ):
-    user_id = None
-    try:
-        payload = get_access_token_payload(request)
-        user_id = payload.get("id")
-    except (JWTError, HTTPException, KeyError, AttributeError):
-        pass
-    thread = dependencies.get_thread(db, thread_id, user_id)
+    user = _get_current_user(db, request)
+    _require_visible_thread(db, user, thread_id)
+    thread = dependencies.get_thread(db, thread_id, user.id)
     if thread is None:
         raise HTTPException(status_code=404, detail="Thread not found")
     return thread
@@ -146,19 +186,9 @@ def update_thread(
     request: Request = None,
     db: Session = Depends(get_db),
 ):
-    payload = get_access_token_payload(request)
-    user_id = payload.get("id")
-    if not user_id:
-        raise HTTPException(status_code=401, detail="Invalid token: missing user id")
-
-    thread = (
-        db.query(dependencies.models.Thread)
-        .filter(dependencies.models.Thread.id == thread_id)
-        .first()
-    )
-    if thread is None:
-        raise HTTPException(status_code=404, detail="Thread not found")
-    if thread.owner_id != user_id:
+    user = _get_current_user(db, request)
+    thread = _require_visible_thread(db, user, thread_id)
+    if thread.owner_id != user.id:
         raise HTTPException(status_code=403, detail="Permission denied")
 
     update_data = {}
@@ -177,29 +207,17 @@ def delete_thread(
     request: Request = None,
     db: Session = Depends(get_db),
 ):
-    payload = get_access_token_payload(request)
-    user_id = payload.get("id")
-    if not user_id:
-        raise HTTPException(status_code=401, detail="Invalid token: missing user id")
-    is_super_user = payload.get("isu", False)
-
-    thread = (
-        db.query(dependencies.models.Thread)
-        .filter(dependencies.models.Thread.id == thread_id)
-        .first()
-    )
-
-    if thread is None:
-        raise HTTPException(status_code=404, detail="Thread not found")
+    user = _get_current_user(db, request)
+    thread = _require_visible_thread(db, user, thread_id)
 
     is_department_admin = False
-    if not is_super_user:
+    if not user.is_super_user:
         course = db.query(Course).filter(Course.id == thread.course_id).first()
         if course is not None:
             is_department_admin = (
                 db.query(UserDepartment)
                 .filter(
-                    UserDepartment.user_id == user_id,
+                    UserDepartment.user_id == user.id,
                     UserDepartment.department_id == course.department_id,
                     UserDepartment.status == "APPROVED",
                     UserDepartment.is_department_admin,
@@ -208,7 +226,7 @@ def delete_thread(
                 is not None
             )
 
-    can_delete = thread.owner_id == user_id or is_department_admin or is_super_user
+    can_delete = thread.owner_id == user.id or is_department_admin or user.is_super_user
     if not can_delete:
         raise HTTPException(status_code=403, detail="Permission denied")
 
@@ -222,12 +240,9 @@ def like_thread(
     thread_id: str,
     db: Session = Depends(get_db),
 ):
-    payload = get_access_token_payload(request)
-    user_id = payload.get("id")
-    if not user_id:
-        raise HTTPException(status_code=401, detail="Invalid token: missing user id")
-
-    thread = dependencies.toggle_thread_like(db, thread_id, user_id)
+    user = _get_current_user(db, request)
+    _require_visible_thread(db, user, thread_id)
+    thread = dependencies.toggle_thread_like(db, thread_id, user.id)
 
     if thread is None:
         raise HTTPException(status_code=404, detail="Thread not found")
@@ -244,18 +259,8 @@ def create_comment(
     request: Request = None,
     db: Session = Depends(get_db),
 ):
-    payload = get_access_token_payload(request)
-    user_id = payload.get("id")
-    if not user_id:
-        raise HTTPException(status_code=401, detail="Invalid token: missing user id")
-
-    thread = (
-        db.query(dependencies.models.Thread)
-        .filter(dependencies.models.Thread.id == thread_id)
-        .first()
-    )
-    if thread is None:
-        raise HTTPException(status_code=404, detail="Thread not found")
+    user = _get_current_user(db, request)
+    thread = _require_visible_thread(db, user, thread_id)
 
     parent_comment = None
     if parent_comment_id:
@@ -267,7 +272,9 @@ def create_comment(
         if parent_comment is None:
             raise HTTPException(status_code=404, detail="Parent comment not found")
         if parent_comment.thread_id != thread_id:
-            raise HTTPException(status_code=400, detail="Parent comment does not belong to this thread")
+            raise HTTPException(
+                status_code=400, detail="Parent comment does not belong to this thread"
+            )
 
     comment_data = {
         "content": content,
@@ -275,7 +282,7 @@ def create_comment(
     }
 
     comment = dependencies.create_comment(
-        db, thread_id, comment_data, user_id, parent_comment_id
+        db, thread_id, comment_data, user.id, parent_comment_id
     )
     return {"status": "success", "comment_id": comment.id}
 
@@ -289,14 +296,9 @@ def get_comments(
     db: Session = Depends(get_db),
 ):
     skip, limit = _normalize_pagination(skip, limit)
-
-    user_id = None
-    try:
-        payload = get_access_token_payload(request)
-        user_id = payload.get("id")
-    except (JWTError, HTTPException, KeyError, AttributeError):
-        pass
-    comments = dependencies.get_comments(db, thread_id, skip, limit, user_id)
+    user = _get_current_user(db, request)
+    _require_visible_thread(db, user, thread_id)
+    comments = dependencies.get_comments(db, thread_id, skip, limit, user.id)
     return comments
 
 
@@ -306,13 +308,9 @@ def get_comment_detail(
     request: Request = None,
     db: Session = Depends(get_db),
 ):
-    user_id = None
-    try:
-        payload = get_access_token_payload(request)
-        user_id = payload.get("id")
-    except (JWTError, HTTPException, KeyError, AttributeError):
-        pass
-    comment = dependencies.get_comment_with_replies(db, comment_id, user_id)
+    user = _get_current_user(db, request)
+    _require_visible_comment(db, user, comment_id)
+    comment = dependencies.get_comment_with_replies(db, comment_id, user.id)
     if comment is None:
         raise HTTPException(status_code=404, detail="Comment not found")
     return comment
@@ -325,19 +323,9 @@ def update_comment(
     request: Request = None,
     db: Session = Depends(get_db),
 ):
-    payload = get_access_token_payload(request)
-    user_id = payload.get("id")
-    if not user_id:
-        raise HTTPException(status_code=401, detail="Invalid token: missing user id")
-
-    comment = (
-        db.query(dependencies.models.ThreadComment)
-        .filter(dependencies.models.ThreadComment.id == comment_id)
-        .first()
-    )
-    if comment is None:
-        raise HTTPException(status_code=404, detail="Comment not found")
-    if comment.owner_id != user_id:
+    user = _get_current_user(db, request)
+    comment, _ = _require_visible_comment(db, user, comment_id)
+    if comment.owner_id != user.id:
         raise HTTPException(status_code=403, detail="Permission denied")
 
     if content is None:
@@ -354,34 +342,18 @@ def delete_comment(
     request: Request = None,
     db: Session = Depends(get_db),
 ):
-    payload = get_access_token_payload(request)
-    user_id = payload.get("id")
-    if not user_id:
-        raise HTTPException(status_code=401, detail="Invalid token: missing user id")
-    is_super_user = payload.get("isu", False)
-
-    comment = (
-        db.query(dependencies.models.ThreadComment)
-        .filter(dependencies.models.ThreadComment.id == comment_id)
-        .first()
-    )
-    if comment is None:
-        raise HTTPException(status_code=404, detail="Comment not found")
+    user = _get_current_user(db, request)
+    comment, thread = _require_visible_comment(db, user, comment_id)
 
     is_department_admin = False
-    if not is_super_user:
-        thread = (
-            db.query(dependencies.models.Thread)
-            .filter(dependencies.models.Thread.id == comment.thread_id)
-            .first()
-        )
+    if not user.is_super_user:
         if thread is not None:
             course = db.query(Course).filter(Course.id == thread.course_id).first()
             if course is not None:
                 is_department_admin = (
                     db.query(UserDepartment)
                     .filter(
-                        UserDepartment.user_id == user_id,
+                        UserDepartment.user_id == user.id,
                         UserDepartment.department_id == course.department_id,
                         UserDepartment.status == "APPROVED",
                         UserDepartment.is_department_admin,
@@ -390,7 +362,9 @@ def delete_comment(
                     is not None
                 )
 
-    can_delete = comment.owner_id == user_id or is_department_admin or is_super_user
+    can_delete = (
+        comment.owner_id == user.id or is_department_admin or user.is_super_user
+    )
     if not can_delete:
         raise HTTPException(status_code=403, detail="Permission denied")
 
@@ -406,12 +380,9 @@ def comment_like(
     comment_id: str,
     db: Session = Depends(get_db),
 ):
-    payload = get_access_token_payload(request)
-    user_id = payload.get("id")
-    if not user_id:
-        raise HTTPException(status_code=401, detail="Invalid token: missing user id")
-
-    comment = dependencies.toggle_comment_like(db, comment_id, user_id)
+    user = _get_current_user(db, request)
+    _require_visible_comment(db, user, comment_id)
+    comment = dependencies.toggle_comment_like(db, comment_id, user.id)
     if comment is None:
         raise HTTPException(status_code=404, detail="Comment not found")
     return comment

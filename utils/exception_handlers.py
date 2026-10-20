@@ -27,12 +27,19 @@ async def request_validation_exception_handler(
     This function will be called when client input is not valid.
     """
     logger.debug("Our custom request_validation_exception_handler was called")
-    body = await request.body()
-    query_params = request.query_params._dict  # pylint: disable=protected-access
     detail = {
-        "errors": exc.errors(),
-        "body": body.decode(),
-        "query_params": query_params,
+        "method": request.method,
+        "path": request.url.path,
+        # Pydantic includes the rejected input in ``errors()``. Keep only the
+        # diagnostic fields that cannot contain passwords, OAuth codes, or
+        # other request values.
+        "errors": [
+            {
+                "type": error.get("type"),
+                "loc": error.get("loc"),
+            }
+            for error in exc.errors()
+        ],
     }
     logger.info(
         detail,

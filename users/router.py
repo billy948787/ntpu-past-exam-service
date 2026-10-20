@@ -1,12 +1,12 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Body, Depends, Form, HTTPException, Request
+from fastapi import APIRouter, Depends, Form, HTTPException, Query, Request, status
 from fastapi.encoders import jsonable_encoder
 from fastapi_cache.decorator import cache
 from sqlalchemy.orm import Session
 from starlette.concurrency import run_in_threadpool
 
-from auth.router import admin_middleware
+from auth.router import admin_middleware, super_user_middleware
 from sql.database import get_db
 from utils.cache import clear_namespace
 from utils.token import get_access_token_payload
@@ -16,14 +16,20 @@ from . import dependencies, schemas
 router = APIRouter(prefix="/users")
 
 
-@router.get("")
+@router.get("", dependencies=[Depends(super_user_middleware)])
 def read_users(
     is_active: bool = None,
-    skip: int = 0,
-    limit: int = 100,
+    skip: Annotated[int, Query(ge=0, le=10000)] = 0,
+    limit: Annotated[int, Query(ge=1, le=100)] = 100,
     db: Session = Depends(get_db),
 ):
-    users = dependencies.get_users(db, skip=skip, limit=limit, is_active=is_active)
+    if is_active is not None:
+        raise HTTPException(
+            status_code=status.HTTP_410_GONE,
+            detail="The is_active user field is no longer supported",
+        )
+
+    users = dependencies.get_users(db, skip=skip, limit=limit)
     data = []
     for user in users:
         u = jsonable_encoder(user)
@@ -33,12 +39,16 @@ def read_users(
 
 
 @router.get("/{user_id}")
-@cache(expire=30, namespace="user-detail")
 def read_user(request: Request, user_id: str, db: Session = Depends(get_db)):
     is_me = user_id == "me"
+    payload = get_access_token_payload(request)
+    viewer_id: str = payload.get("id")
     if is_me:
-        payload = get_access_token_payload(request)
-        user_id: str = payload.get("id")
+        user_id = viewer_id
+
+    if not dependencies.can_view_user_details(db, viewer_id, user_id):
+        raise HTTPException(status_code=403, detail="Not allowed to view this user")
+
     db_user = dependencies.get_user(db, user_id=user_id)
     if db_user is None:
         raise HTTPException(status_code=404, detail="User not found")
@@ -48,6 +58,10 @@ def read_user(request: Request, user_id: str, db: Session = Depends(get_db)):
         pref = dependencies.get_user_preference(db, user_id)
         data["show_empty_courses"] = pref.show_empty_courses if pref else True
         data["default_is_anonymous"] = pref.default_is_anonymous if pref else False
+    else:
+        # Department admins only need profile and join-request information.
+        data.pop("email", None)
+        data.pop("is_super_user", None)
     return data
 
 
@@ -118,22 +132,27 @@ async def update_user_preferences(
     }
 
 
-@router.put("/status/{department_id}/{user_id}", dependencies=[Depends(admin_middleware)])
+@router.put(
+    "/status/{department_id}/{user_id}", dependencies=[Depends(admin_middleware)]
+)
 async def update_user_active_status(
-    is_active: Annotated[bool, Form()], user_id: str, db: Session = Depends(get_db)
+    is_active: Annotated[bool, Form()], department_id: str, user_id: str
 ):
-    await run_in_threadpool(dependencies.update_user_status, db, user_id=user_id, status=is_active)
-    await clear_namespace("user-detail")
-    await clear_namespace("verify-token")
-    return {"status": "success"}
+    del is_active, department_id, user_id
+    raise HTTPException(
+        status_code=status.HTTP_410_GONE,
+        detail="Global user status is no longer supported",
+    )
 
 
-@router.put("/admin/{department_id}/{user_id}", dependencies=[Depends(admin_middleware)])
+@router.put(
+    "/admin/{department_id}/{user_id}", dependencies=[Depends(admin_middleware)]
+)
 async def update_user_admin_status(
-    is_admin: Annotated[bool, Form()], user_id: str, db: Session = Depends(get_db)
+    is_admin: Annotated[bool, Form()], department_id: str, user_id: str
 ):
-    await run_in_threadpool(dependencies.update_user_admin, db, user_id=user_id, is_admin=is_admin)
-    await clear_namespace("user-detail")
-    await clear_namespace("user-admin")
-    await clear_namespace("verify-token")
-    return {"status": "success"}
+    del is_admin, user_id
+    raise HTTPException(
+        status_code=status.HTTP_410_GONE,
+        detail=f"Use /departments/{department_id}/admin instead",
+    )

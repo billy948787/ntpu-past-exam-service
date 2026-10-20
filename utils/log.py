@@ -22,21 +22,23 @@ else:
 
 
 async def log_request_middleware(request, call_next):
-    url = (
-        f"{request.url.path}?{request.query_params}"
-        if request.query_params
-        else request.url.path
-    )
-    start_time = time.time()
+    # Query strings commonly carry OAuth codes and other credentials. Keep
+    # request logs useful without persisting their values.
+    path = request.url.path
+    start_time = time.perf_counter()
     response = await call_next(request)
-    process_time = (time.time() - start_time) * 1000
-    formatted_process_time = "{0:.2f}".format(process_time)
+    process_time = (time.perf_counter() - start_time) * 1000
     try:
         status_phrase = http.HTTPStatus(response.status_code).phrase
     except ValueError:
         status_phrase = ""
     logger.info(
-        f'"{request.method} {url}" {response.status_code} {status_phrase} {formatted_process_time}ms',
+        '"%s %s" %s %s %.2fms',
+        request.method,
+        path,
+        response.status_code,
+        status_phrase,
+        process_time,
         extra={
             "env": SERVICE_NAME,
         },

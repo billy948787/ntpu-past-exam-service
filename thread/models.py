@@ -19,7 +19,6 @@ from sql.database import Base, BaseColumn
 
 class Thread(Base, BaseColumn):
     __tablename__ = "threads"
-    __table_args__ = {"mysql_charset": "utf8mb4", "mysql_collate": "utf8mb4_0900_ai_ci"}
 
     title = Column(String(256))
     content = Column(Text)
@@ -32,7 +31,6 @@ class Thread(Base, BaseColumn):
 
 class ThreadComment(Base, BaseColumn):
     __tablename__ = "thread_comments"
-    __table_args__ = {"mysql_charset": "utf8mb4", "mysql_collate": "utf8mb4_0900_ai_ci"}
 
     thread_id = Column(
         String(256), ForeignKey("threads.id", ondelete="CASCADE"), index=True

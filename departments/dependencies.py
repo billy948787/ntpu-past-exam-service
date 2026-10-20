@@ -68,14 +68,45 @@ def check_is_department_admin(db: Session, user_id: str, department_id: str):
         .filter(
             (UserDepartment.department_id == department_id)
             & (UserDepartment.user_id == user_id)
+            & (UserDepartment.status == "APPROVED")
             & (UserDepartment.is_department_admin)
         )
         .first()
     ) is not None
 
 
+def require_viewable_department(db: Session, user_id: str, department_id: str):
+    """Return a department only when the current user may view it.
+
+    A 404 is used for private departments so callers do not disclose that a
+    protected resource exists.  Invalid/deleted users are rejected as an
+    authentication failure rather than causing an AttributeError.
+    """
+    user = db.query(User).filter(User.id == user_id).first()
+    if user is None:
+        raise HTTPException(status_code=401, detail="User not found")
+
+    department = (
+        db.query(models.Department)
+        .filter(models.Department.id == department_id)
+        .first()
+    )
+    if department is None:
+        raise HTTPException(status_code=404, detail="Department not found")
+
+    if user.is_super_user or department.is_public:
+        return department
+
+    if not check_can_view(db, user_id=user_id, department_id=department_id):
+        raise HTTPException(status_code=404, detail="Department not found")
+
+    return department
+
+
 def get_departments(db: Session):
-    return db.query(models.Department).order_by(models.Department.sort_order.asc()).all()
+    return (
+        db.query(models.Department).order_by(models.Department.sort_order.asc()).all()
+    )
 
 
 def get_viewable_departments(db: Session, user_id: str):
@@ -83,7 +114,11 @@ def get_viewable_departments(db: Session, user_id: str):
     if not user:
         raise HTTPException(status_code=401, detail="User not found")
     if user.is_super_user:
-        return db.query(models.Department).order_by(models.Department.sort_order.asc()).all()
+        return (
+            db.query(models.Department)
+            .order_by(models.Department.sort_order.asc())
+            .all()
+        )
     sub_query = db.query(UserDepartment.department_id).filter(
         (UserDepartment.status == "APPROVED")
         & (UserDepartment.user_id == user_id)
@@ -102,9 +137,15 @@ def get_viewable_departments(db: Session, user_id: str):
 
 def get_viewable_departments_ids(db: Session, user_id: str):
     user = db.query(User).filter(User.id == user_id).first()
+    if user is None:
+        raise HTTPException(status_code=401, detail="User not found")
     viewable_departments = []
     if user.is_super_user:
-        for department in db.query(models.Department).order_by(models.Department.sort_order.asc()).all():
+        for department in (
+            db.query(models.Department)
+            .order_by(models.Department.sort_order.asc())
+            .all()
+        ):
             viewable_departments.append(department.id)
 
     else:
@@ -131,7 +172,9 @@ def get_departments_status(db: Session, user_id: str):
     user = db.query(User).filter(User.id == user_id).first()
     if user.is_super_user:
         return {
-            "visible": db.query(models.Department).order_by(models.Department.sort_order.asc()).all(),
+            "visible": db.query(models.Department)
+            .order_by(models.Department.sort_order.asc())
+            .all(),
             "pending": [],
         }
     sub_query = db.query(UserDepartment.department_id).filter(
@@ -219,10 +262,20 @@ def request_view_department(db: Session, request: Dict):
     return db_request
 
 
-def approve_request_view_department(db: Session, request_id: str):
-    request = db.query(UserDepartment).filter(UserDepartment.id == request_id).first()
+def approve_request_view_department(db: Session, department_id: str, request_id: str):
+    request = (
+        db.query(UserDepartment)
+        .filter(
+            UserDepartment.id == request_id,
+            UserDepartment.department_id == department_id,
+        )
+        .first()
+    )
     if request is None:
         raise HTTPException(status_code=404)
+
+    if request.status != "PENDING":
+        raise HTTPException(status_code=400, detail="request is not pending")
 
     request.status = "APPROVED"
     db.commit()
@@ -272,9 +325,11 @@ def update_member_admin(db: Session, department_id: str, user_id: str, is_admin:
             title="權限變更",
             content=f"您在 {department.name} 的權限已被提升至『管理員』。",
             recipients=[
-                user.email
-                if user.email is not None
-                else f"s{user.username}@gm.ntpu.edu.tw"
+                (
+                    user.email
+                    if user.email is not None
+                    else f"s{user.username}@gm.ntpu.edu.tw"
+                )
             ],
         )
     else:
@@ -282,9 +337,11 @@ def update_member_admin(db: Session, department_id: str, user_id: str, is_admin:
             title="權限變更",
             content=f"您在 {department.name} 的權限已被變更至『一般用戶』。",
             recipients=[
-                user.email
-                if user.email is not None
-                else f"s{user.username}@gm.ntpu.edu.tw"
+                (
+                    user.email
+                    if user.email is not None
+                    else f"s{user.username}@gm.ntpu.edu.tw"
+                )
             ],
         )
 

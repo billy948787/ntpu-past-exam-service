@@ -7,8 +7,24 @@ from posts.models import Post
 from . import models
 
 
-def get_courses(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(models.Course).offset(skip).limit(limit).all()
+def get_courses(
+    db: Session,
+    visible_department_ids: list[str],
+    skip: int = 0,
+    limit: int = 100,
+):
+    if not visible_department_ids:
+        return []
+
+    normalized_skip = min(max(skip, 0), 10000)
+    normalized_limit = max(1, min(limit, 100))
+    return (
+        db.query(models.Course)
+        .filter(models.Course.department_id.in_(visible_department_ids))
+        .offset(normalized_skip)
+        .limit(normalized_limit)
+        .all()
+    )
 
 
 def get_course(db: Session, course_id: str):

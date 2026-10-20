@@ -15,6 +15,20 @@ from . import dependencies
 
 router = APIRouter(prefix="/departments")
 
+DEPARTMENT_RESOURCE_CACHE_NAMESPACES = (
+    "posts",
+    "courses",
+    "course-detail",
+    "dept-courses",
+    "bulletins",
+    "dept-bulletins",
+)
+
+
+async def _clear_department_resource_caches():
+    for namespace in DEPARTMENT_RESOURCE_CACHE_NAMESPACES:
+        await clear_namespace(namespace)
+
 
 @router.get("")
 def read_all_departments(db: Session = Depends(get_db)):
@@ -24,13 +38,25 @@ def read_all_departments(db: Session = Depends(get_db)):
 
 @router.get("/{department_id}/courses")
 @cache(expire=60, namespace="dept-courses")
-def get_department_courses(department_id: str, db: Session = Depends(get_db)):
+def get_department_courses(
+    request: Request,
+    department_id: str,
+    db: Session = Depends(get_db),
+):
+    user_id = get_access_token_payload(request).get("id")
+    dependencies.require_viewable_department(db, user_id, department_id)
     return dependencies.get_department_courses(db, department_id=department_id)
 
 
 @router.get("/{department_id}/bulletins")
 @cache(expire=60, namespace="dept-bulletins")
-def get_department_bulletins(department_id: str, db: Session = Depends(get_db)):
+def get_department_bulletins(
+    request: Request,
+    department_id: str,
+    db: Session = Depends(get_db),
+):
+    user_id = get_access_token_payload(request).get("id")
+    dependencies.require_viewable_department(db, user_id, department_id)
     return dependencies.get_department_bulletins(db, department_id=department_id)
 
 
@@ -84,7 +110,9 @@ async def send_join_request(
     payload = get_access_token_payload(request)
     user_id = payload.get("id")
     join_request = {"department_id": department_id, "user_id": user_id}
-    data = await run_in_threadpool(dependencies.request_view_department, db, join_request)
+    data = await run_in_threadpool(
+        dependencies.request_view_department, db, join_request
+    )
     await clear_namespace("dept-status")
     return jsonable_encoder(data)
 
@@ -123,6 +151,7 @@ async def update_member_admin(
     )
     await clear_namespace("user-admin")
     await clear_namespace("verify-token")
+    await _clear_department_resource_caches()
     return {"status": "success"}
 
 
@@ -131,11 +160,18 @@ async def update_member_admin(
     dependencies=[Depends(admin_middleware)],
 )
 async def approve_join_request(
+    department_id: str,
     request_id: str,
     db: Session = Depends(get_db),
 ):
-    await run_in_threadpool(dependencies.approve_request_view_department, db, request_id)
+    await run_in_threadpool(
+        dependencies.approve_request_view_department,
+        db,
+        department_id,
+        request_id,
+    )
     await clear_namespace("dept-status")
     await clear_namespace("dept-visible")
     await clear_namespace("verify-token")
+    await _clear_department_resource_caches()
     return {"status": "success"}

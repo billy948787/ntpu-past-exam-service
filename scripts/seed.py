@@ -14,13 +14,15 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from alembic import command
 from alembic.config import Config
+from sqlalchemy import inspect
 from sqlalchemy.orm import Session
 
 from bulletins.models import Bulletin
 from courses.models import Course
 from departments.models import Department
 from posts.models import Post, PostFile
-from sql.database import SessionLocal
+from sql.database import SessionLocal, engine
+from sql.models import Base
 from users.models import User, UserDepartment
 
 
@@ -37,6 +39,22 @@ def run_migrations():
     project_root = os.path.join(os.path.dirname(__file__), "..")
     alembic_cfg = Config(os.path.join(project_root, "alembic.ini"))
     alembic_cfg.set_main_option("script_location", os.path.join(project_root, "alembic"))
+
+    table_names = set(inspect(engine).get_table_names())
+    if engine.dialect.name == "postgresql" and not table_names:
+        # The historical Alembic chain contains MySQL-only operations. Build a
+        # fresh PostgreSQL baseline from the current models, then let future
+        # PostgreSQL-compatible revisions continue from the current head.
+        Base.metadata.create_all(bind=engine)
+        command.stamp(alembic_cfg, "head")
+        print("Fresh PostgreSQL schema created and stamped at Alembic head.")
+        return
+
+    if table_names and "alembic_version" not in table_names:
+        raise RuntimeError(
+            "Database has tables but no Alembic version. Refusing to guess its schema state."
+        )
+
     command.upgrade(alembic_cfg, "head")
     print("Migrations applied.")
 

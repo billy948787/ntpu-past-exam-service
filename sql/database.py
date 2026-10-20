@@ -9,11 +9,11 @@ load_dotenv()
 
 
 SQLALCHEMY_DATABASE_URL = URL.create(
-    drivername=os.getenv("DATABASE_DRIVER", "mysql+mysqlconnector"),
+    drivername=os.getenv("DATABASE_DRIVER", "postgresql+psycopg"),
     username=os.getenv("DATABASE_USERNAME"),
     password=os.getenv("DATABASE_PASSWORD"),
     host=os.getenv("DATABASE_HOST"),
-    port=int(os.getenv("DATABASE_PORT", "3306")),
+    port=int(os.getenv("DATABASE_PORT", "5432")),
     database=os.getenv("DATABASE"),
 ).render_as_string(hide_password=False)
 

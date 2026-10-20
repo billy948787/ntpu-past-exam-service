@@ -19,7 +19,12 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 
 
-def _serialize_thread(thread: models.Thread, user: User, liked: Optional[bool] = None, current_user_id: Optional[str] = None):
+def _serialize_thread(
+    thread: models.Thread,
+    user: User,
+    liked: Optional[bool] = None,
+    current_user_id: Optional[str] = None,
+):
     data = {
         "id": thread.id,
         "title": thread.title,
@@ -107,7 +112,9 @@ def get_threads(
         }
 
     threads = [
-        _serialize_thread(thread, user, liked=thread.id in liked_thread_ids, current_user_id=user_id)
+        _serialize_thread(
+            thread, user, liked=thread.id in liked_thread_ids, current_user_id=user_id
+        )
         for thread, user in query_result
     ]
     return threads, total
@@ -289,12 +296,21 @@ def get_comment_with_replies(db: Session, comment_id: str, user_id: str = None):
     all_comments = [(comment, user)]
     depth = 0
 
-    while current_parent_ids and depth < MAX_REPLY_DEPTH and len(all_comments) < MAX_TOTAL_REPLIES:
+    while (
+        current_parent_ids
+        and depth < MAX_REPLY_DEPTH
+        and len(all_comments) - 1 < MAX_TOTAL_REPLIES
+    ):
+        remaining_replies = MAX_TOTAL_REPLIES - (len(all_comments) - 1)
         reply_results = (
             db.query(models.ThreadComment, User)
             .filter(models.ThreadComment.parent_comment_id.in_(current_parent_ids))
             .join(User, models.ThreadComment.owner_id == User.id)
-            .order_by(models.ThreadComment.create_time.asc())
+            .order_by(
+                models.ThreadComment.create_time.asc(),
+                models.ThreadComment.id.asc(),
+            )
+            .limit(remaining_replies)
             .all()
         )
 
@@ -303,6 +319,8 @@ def get_comment_with_replies(db: Session, comment_id: str, user_id: str = None):
 
         next_parent_ids = []
         for reply, reply_user in reply_results:
+            if len(all_comments) - 1 >= MAX_TOTAL_REPLIES:
+                break
             if reply.id in seen_comment_ids:
                 continue
             seen_comment_ids.add(reply.id)
@@ -326,7 +344,9 @@ def get_comment_with_replies(db: Session, comment_id: str, user_id: str = None):
             .all()
         }
 
-    reply_count_map = {pid: len(replies) for pid, replies in replies_by_parent_id.items()}
+    reply_count_map = {
+        pid: len(replies) for pid, replies in replies_by_parent_id.items()
+    }
 
     comment_data_map = {}
     for comment_item, comment_user in all_comments:
@@ -445,7 +465,12 @@ def toggle_thread_like(db: Session, thread_id: str, user_id: str):
         db.refresh(db_thread)
 
     thread_user = db.query(User).filter(User.id == db_thread.owner_id).first()
-    return {"thread": _serialize_thread(db_thread, thread_user, liked=liked, current_user_id=user_id), "liked": liked}
+    return {
+        "thread": _serialize_thread(
+            db_thread, thread_user, liked=liked, current_user_id=user_id
+        ),
+        "liked": liked,
+    }
 
 
 def toggle_comment_like(db: Session, comment_id: str, user_id: str):
@@ -503,4 +528,9 @@ def toggle_comment_like(db: Session, comment_id: str, user_id: str):
         db.refresh(db_comment)
 
     comment_user = db.query(User).filter(User.id == db_comment.owner_id).first()
-    return {"comment": _serialize_comment(db_comment, comment_user, liked=liked, current_user_id=user_id), "liked": liked}
+    return {
+        "comment": _serialize_comment(
+            db_comment, comment_user, liked=liked, current_user_id=user_id
+        ),
+        "liked": liked,
+    }

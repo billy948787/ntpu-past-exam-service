@@ -31,8 +31,8 @@ Pre-commit hooks configured in `.pre-commit-config.yaml`.
 ## Tech Stack
 
 - **FastAPI** 0.104.1 (async)
-- **SQLAlchemy 2.0** ORM + **MySQL** + **Alembic** migrations
-- **Redis** caching via `fastapi-cache2` (custom pickle coder)
+- **SQLAlchemy 2.0** ORM + **PostgreSQL 17** + **Alembic** migrations
+- **Redis** caching plus revocable refresh-session state
 - **Cloudflare R2** (S3-compatible via boto3) for file storage
 - **JWT** auth (HS256, python-jose)
 - **Logtail** for structured logging (Better Stack)

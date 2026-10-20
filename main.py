@@ -21,6 +21,7 @@ from starlette.exceptions import HTTPException
 
 from auth.router import auth_middleware
 from auth.router import router as auth_router
+from auth.security import allowed_auth_origins
 from bulletins.router import router as bulletins_router
 from courses.router import router as courses_router
 from departments.router import router as departments_router
@@ -42,8 +43,6 @@ def _is_request_annotation(annotation: Any) -> bool:
     """Check whether an annotation is ``Request`` or ``Optional[Request]`` /
     ``Request | None``.
     """
-    import typing
-
     if annotation is Request:
         return True
 
@@ -75,13 +74,12 @@ def custom_key_builder(
     - For public endpoints (no ``request`` parameter), the auth header is ignored
       so that all users share the same cache entry.
     """
+    del response
     kwargs = kwargs or {}
 
     # 1. Filter out SQLAlchemy Session objects — FastAPI creates a new Session
     #    per request, so including it would make the cache key unique every time.
-    filtered_kwargs = {
-        k: v for k, v in kwargs.items() if not isinstance(v, Session)
-    }
+    filtered_kwargs = {k: v for k, v in kwargs.items() if not isinstance(v, Session)}
 
     # 2. Base key derived from function identity + arguments (hashed to keep
     #    key length bounded while keeping namespace and func name readable).
@@ -126,7 +124,7 @@ class ORMJsonCoder(Coder):
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(application: FastAPI):
     redis = aioredis.Redis(
         host=os.getenv("REDIS_HOST"),
         password=os.getenv("REDIS_PASSWORD"),
@@ -138,7 +136,11 @@ async def lifespan(app: FastAPI):
         key_builder=custom_key_builder,
         coder=ORMJsonCoder,
     )
-    yield
+    application.state.redis = redis
+    try:
+        yield
+    finally:
+        await redis.close(close_connection_pool=True)
 
 
 app = FastAPI(
@@ -166,6 +168,7 @@ async def cache_control_middleware(request: Request, call_next):
         response.headers["Cache-Control"] = "no-store"
     return response
 
+
 origins = [
     "https://past-exam.zeabur.app",
     "https://past-exam.ntpu.cc",
@@ -175,9 +178,9 @@ origins = [
     "http://localhost:8080",
 ]
 
-origin_from_env = os.getenv("ORIGIN")
-if origin_from_env and origin_from_env not in origins:
-    origins.append(origin_from_env)
+for origin_from_env in allowed_auth_origins():
+    if origin_from_env not in origins:
+        origins.append(origin_from_env)
 
 app.add_middleware(
     CORSMiddleware,

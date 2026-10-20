@@ -5,7 +5,7 @@ set -eu
 # traffic. Alembic upgrades are idempotent, so normal container restarts are
 # safe. A failed migration exits the container and leaves the old deployment
 # serving traffic.
-alembic upgrade head
-alembic check
+python -m alembic upgrade head
+python -m alembic check
 
-exec uvicorn main:app --host 0.0.0.0 --port 8080
+exec python -m uvicorn main:app --host 0.0.0.0 --port 8080

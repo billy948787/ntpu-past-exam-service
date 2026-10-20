@@ -15,4 +15,4 @@ class Department(Base, BaseColumn):
     key = Column(String(256))
     name = Column(String(256))
     is_public = Column(Boolean, default=True, index=True)
-    sort_order = Column(Integer, default=999, nullable=False)
+    sort_order = Column(Integer, default=999, server_default="999", nullable=False)
